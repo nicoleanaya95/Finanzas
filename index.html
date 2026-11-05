@@ -264,7 +264,7 @@ var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos
 
 /* ---------- almacenamiento local (solo en este teléfono) ----------
    Sin PIN: se guarda tal cual. Con PIN: se guarda cifrado (AES-GCM, clave derivada del PIN con PBKDF2). */
-var KEY='finanzas-nicole-v1',PINKEY='finanzas-nicole-pin';
+var KEY='finanzas-app-v1',PINKEY='finanzas-app-pin';
 var enc=new TextEncoder(),dec=new TextDecoder();
 function snapshot(){return {version:3,pagos:S.pagos,meses:S.meses,gastos:S.gastos,metas:S.metas,movs:S.movs,cuentas:S.cuentas,snaps:S.snaps,ingresos:S.ingresos,extras:S.extras,transf:S.transf,presup:S.presup,plan:S.plan};}
 function b64(buf){var s='',a=new Uint8Array(buf);for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s);}
