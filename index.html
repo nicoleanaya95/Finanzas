@@ -500,12 +500,14 @@ function normG(id,d){
   var cat=d.cat==='cafe'?'comida':d.cat; // café ahora va dentro de comidas fuera
   return {id:String(id),amount:Number(d.amount)||0,note:String(d.note||''),cat:KATS[cat]?cat:'otro',date:date,t:Number(d.t)||0,fuente:String(d.fuente||''),ap:(d.ap&&d.ap.cuenta)?{cuenta:String(d.ap.cuenta),amount:Number(d.ap.amount)||0}:null};
 }
-var PERS={mes:'Mes',q1:'1–15',q2:'16–fin'};
+var PERS={mes:'Mes',sem:'Semana',q1:'1–15',q2:'16–fin'};
+function weekRange(){var d=new Date();var dow=(d.getDay()+6)%7;var s=new Date(d.getFullYear(),d.getMonth(),d.getDate()-dow),e=new Date(s.getFullYear(),s.getMonth(),s.getDate()+6);var f=function(x){return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0');};return {a:f(s),b:f(e)};}
 function inPer(day,per){return per==='q1'?day<=15:per==='q2'?day>=16:true;}
 function gmodel(M,per){
   per=per||'mes';
   var key=mkey(S.y,S.m),ts=todayStr();
-  var list=S.gastos.filter(function(g){return g.date.slice(0,7)===key&&inPer(+g.date.slice(8),per);}).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:b.t-a.t;});
+  var wr=weekRange();
+  var list=S.gastos.filter(function(g){return per==='sem'?(g.date>=wr.a&&g.date<=wr.b):(g.date.slice(0,7)===key&&inPer(+g.date.slice(8),per));}).sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:b.t-a.t;});
   var total=0,today=0,byCat={},days={},tarjeta=0;
   list.forEach(function(g){
     total+=g.amount;
@@ -525,18 +527,26 @@ function balance(M,G){
   var ahorro=S.movs.reduce(function(s,v){return v.date.slice(0,7)===key&&inPer(+v.date.slice(8),per)?s+v.amount:s;},0);
   return {ing:r2(ing),fijos:r2(fijos),gastos:G.contado,ahorro:r2(ahorro),res:r2(ing-fijos-G.contado-ahorro)};
 }
-function presupFor(k,per){var v=Number((S.presup||{})[k])||0;return per==='mes'?v:r2(v/2);}
+function presupFor(k,per){var v=Number((S.presup||{})[k])||0;return per==='mes'?v:per==='sem'?r2(v*12/52):r2(v/2);}
 function renderGHero(G){
   var M=model(),B=balance(M,G),per=G.per;
   var seg='<div class="seg small" role="group" aria-label="Periodo" style="margin:14px 0 0;background:var(--hero-btn)">'+Object.keys(PERS).map(function(k){return '<button type="button" data-act="per" data-v="'+k+'" aria-pressed="'+(per===k)+'">'+PERS[k]+'</button>';}).join('')+'</div>';
   var line=function(l,v,neg){return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:2px 0"><span style="color:var(--ink-2)">'+l+'</span><b style="font-variant-numeric:tabular-nums">'+(neg?'−':'')+fmt(v)+'</b></div>';};
-  var lbl=per==='mes'?MONTHS[S.m]:per==='q1'?'la 1.ª quincena':'la 2.ª quincena';
+  var lbl=per==='sem'?'esta semana':per==='mes'?MONTHS[S.m]:per==='q1'?'la 1.ª quincena':'la 2.ª quincena';
   $('hero').innerHTML=navHtml()+seg+
     '<p class="eyebrow">Gastado en '+lbl+'</p>'+
     '<p class="big">'+fmt(G.total)+'</p>'+
     '<p class="of">'+(G.n?G.n+(G.n===1?' gasto':' gastos'):'Sin gastos todavía')+(G.tarjeta>0?' · '+fmt(G.tarjeta)+' con tarjeta':'')+(G.cur&&G.today>0&&per==='mes'?' · hoy '+fmt(G.today):'')+'</p>'+
-    '<div class="split" style="display:block">'+line('Ingresos',B.ing)+line('Pagos fijos de tu bolsa',B.fijos,true)+line('Gastos de tu bolsa',B.gastos,true)+(B.ahorro?line('Apartado para ahorro',B.ahorro,true):'')+
-    '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Sobregiro':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--late)':'var(--accent)')+'">'+fmt(Math.abs(B.res))+'</b></div></div>';
+    (per==='sem'?semBlock(G,line):'<div class="split" style="display:block">'+line('Ingresos',B.ing)+line('Pagos fijos de tu bolsa',B.fijos,true)+line('Gastos de tu bolsa',B.gastos,true)+(B.ahorro?line('Apartado para ahorro',B.ahorro,true):'')+
+    '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Sobregiro':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--late)':'var(--accent)')+'">'+fmt(Math.abs(B.res))+'</b></div></div>');
+}
+function semBlock(G,line){
+  var cap=0;Object.keys(KATS).forEach(function(k){cap+=presupFor(k,'sem');});
+  var rest=r2(cap-G.total),wr=weekRange();
+  var cm=G.byCat.comida||0,cc=presupFor('comida','sem');
+  var bl=function(l,v){return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+l+'</b><b style="font-variant-numeric:tabular-nums;color:'+(rest<0?'var(--late)':'var(--accent)')+'">'+fmt(Math.abs(v))+'</b></div>';};
+  if(!cap)return '<div class="split" style="display:block"><p class="of">Sin topes. Pon tu presupuesto mensual y la semana se calcula sola (mes × 12 ÷ 52).</p></div>';
+  return '<div class="split" style="display:block">'+line('Tope de la semana',cap)+line('Gastado',G.total)+(cc?line('Comidas fuera (tope '+fmt(cc)+')',cm):'')+bl(rest<0?'Te pasaste':'Te quedan',rest)+'<p class="of" style="margin-top:6px">Lunes '+wr.a.slice(8)+' a domingo '+wr.b.slice(8)+'</p></div>';
 }
 function presupHtml(G){
   var per=G.per,keys=Object.keys(KATS).filter(function(k){return presupFor(k,per)>0||G.byCat[k];});
@@ -578,7 +588,7 @@ function renderGMain(G){
   el.innerHTML=top+'<p class="eyebrow" style="margin:20px 8px 8px">Gastos</p><ul class="list">'+html+'</ul>'+hist;
 }
 function presupForm(){
-  return '<h2 id="sheet-title">Presupuesto del mes</h2><p class="sub">Cuánto quieres gastar al mes en cada categoría. En la vista por quincena se usa la mitad.</p><form id="prform" novalidate><div class="two">'+
+  return '<h2 id="sheet-title">Presupuesto del mes</h2><p class="sub">Cuánto quieres gastar al mes en cada categoría. En quincena se usa la mitad y en semana mes × 12 ÷ 52.</p><form id="prform" novalidate><div class="two">'+
     Object.keys(KATS).map(function(k){return '<div class="field"><label for="pr-'+k+'">'+KATS[k]+'</label><input type="text" id="pr-'+k+'" data-k="'+k+'" inputmode="decimal" autocomplete="off" placeholder="0" value="'+((S.presup||{})[k]||'')+'"></div>';}).join('')+
     '</div><div class="actions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-act="close">Cancelar</button></div></form>';
 }
