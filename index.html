@@ -260,13 +260,13 @@ var r2=function(n){return Math.round(n*100)/100;};
 var dim=function(y,m){return new Date(y,m+1,0).getDate();};
 var mkey=function(y,m){return y+'-'+pad(m+1);};
 var nowD=new Date();
-var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos:[],extras:[],transf:[],presup:{},per:'mes',plan:{extra:0,metodo:'tasa',unico:0,unicoMes:''},view:'inicio',filter:'todos',y:nowD.getFullYear(),m:nowD.getMonth(),sheet:null,armed:false,opener:null,pin:null,key:null,locked:false,hiddenAt:0};
+var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos:[],extras:[],cobros:[],transf:[],presup:{},per:'mes',plan:{extra:0,metodo:'tasa',unico:0,unicoMes:''},view:'inicio',filter:'todos',y:nowD.getFullYear(),m:nowD.getMonth(),sheet:null,armed:false,opener:null,pin:null,key:null,locked:false,hiddenAt:0};
 
 /* ---------- almacenamiento local (solo en este teléfono) ----------
    Sin PIN: se guarda tal cual. Con PIN: se guarda cifrado (AES-GCM, clave derivada del PIN con PBKDF2). */
 var KEY='finanzas-app-v1',PINKEY='finanzas-app-pin';
 var enc=new TextEncoder(),dec=new TextDecoder();
-function snapshot(){return {version:3,pagos:S.pagos,meses:S.meses,gastos:S.gastos,metas:S.metas,movs:S.movs,cuentas:S.cuentas,snaps:S.snaps,ingresos:S.ingresos,extras:S.extras,transf:S.transf,presup:S.presup,plan:S.plan};}
+function snapshot(){return {version:3,pagos:S.pagos,meses:S.meses,gastos:S.gastos,metas:S.metas,movs:S.movs,cuentas:S.cuentas,snaps:S.snaps,ingresos:S.ingresos,extras:S.extras,cobros:S.cobros,transf:S.transf,presup:S.presup,plan:S.plan};}
 function b64(buf){var s='',a=new Uint8Array(buf);for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s);}
 function unb64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
 function deriveKey(pin,salt){
@@ -298,6 +298,7 @@ function apply(j){
   S.snaps=(j.snaps||[]).map(function(s){return normSn(s.id,s);});
   S.ingresos=(j.ingresos||[]).map(function(i){return normI(i.id,i);});
   S.extras=(j.extras||[]).map(function(x){return normX(x.id,x);});
+  S.cobros=(j.cobros||[]).map(function(b){return normB(b.id,b);});
   S.transf=(j.transf||[]).map(function(t){return normT(t.id,t);});
   S.plan=normPlan(j.plan);
   S.presup={};var pr=j.presup||{};Object.keys(pr).forEach(function(k){var v=Number(pr[k]);if(KATS[k]&&v>0)S.presup[k]=v;});
@@ -316,7 +317,7 @@ function load(){
     var sv=0;try{sv=+localStorage.getItem('finanzas-seed-v')||0;}catch(e){}
     if(sv<(window.SEED.v||1)){
       var cur=snapshot(),sd=window.SEED;
-      ['pagos','gastos','metas','movs','cuentas','snaps','ingresos','extras','transf'].forEach(function(k){
+      ['pagos','gastos','metas','movs','cuentas','snaps','ingresos','extras','cobros','transf'].forEach(function(k){
         var force={};(sd.force||[]).forEach(function(i){force[i]=1;});
         cur[k]=(cur[k]||[]).filter(function(x){return !force[x.id];});
         var have={};(cur[k]||[]).forEach(function(x){have[x.id]=1;});
@@ -1044,6 +1045,64 @@ function normX(id,d){
   d=d||{};
   return {id:String(id),name:String(d.name||'Ingreso extra'),amount:Number(d.amount)||0,date:/^\d{4}-\d{2}-\d{2}$/.test(String(d.date))?String(d.date):todayStr(),t:Number(d.t)||0};
 }
+function normB(id,d){
+  d=d||{};var ok=function(x){return /^\d{4}-\d{2}-\d{2}$/.test(String(x));};
+  return {id:String(id),who:String(d.who||'Alguien').slice(0,50),note:String(d.note||'').slice(0,80),amount:Number(d.amount)||0,date:ok(d.date)?String(d.date):todayStr(),paid:ok(d.paid)?String(d.paid):'',xid:String(d.xid||''),t:Number(d.t)||0};
+}
+function cobroForm(o){
+  var isNew=!o,v=o||{who:'',note:'',amount:'',date:todayStr(),paid:''};
+  return '<h2 id="sheet-title">'+(isNew?'Nuevo por cobrar':'Editar por cobrar')+'</h2><p class="sub">Dinero que pagaste tú y alguien te debe. No cuenta como ingreso hasta que te lo paguen.</p>'+
+    '<form id="bform" novalidate>'+
+      '<div class="field"><label for="b-who">Quién te debe</label><input type="text" id="b-who" maxlength="50" autocomplete="off" placeholder="Ej. Mi hermana, Katherine" value="'+esc(v.who)+'"></div>'+
+      '<div class="field"><label for="b-note">Por qué</label><input type="text" id="b-note" maxlength="80" autocomplete="off" placeholder="Ej. Kokoa, almuerzo" value="'+esc(v.note)+'"></div>'+
+      '<div class="two"><div class="field"><label for="b-amt">Monto ($)</label><input type="text" id="b-amt" inputmode="decimal" autocomplete="off" value="'+(v.amount===''?'':esc(v.amount))+'"></div>'+
+      '<div class="field"><label for="b-date">Fecha</label><input type="date" id="b-date" value="'+esc(v.date)+'"></div></div>'+
+      '<p class="hint">Si lo pagaste con tarjeta o efectivo, registra también el gasto completo en Gastos. Al cobrarlo, entra como ingreso y se compensa.</p>'+
+      '<p class="err" id="f-err" role="alert" hidden></p>'+
+      '<div class="actions"><button type="submit" class="btn primary">Guardar</button>'+
+      '<div class="row2"><button type="button" class="btn ghost" data-act="close">Cancelar</button>'+
+      (isNew?'<span></span>':'<button type="button" class="btn danger" data-act="del" id="delbtn">Eliminar</button>')+'</div></div>'+
+    '</form>';
+}
+function submitCobro(e){
+  e.preventDefault();
+  var err=$('f-err');
+  var fail=function(m,id){err.textContent=m;err.hidden=false;var el=$(id);if(el)el.focus();};
+  var who=$('b-who').value.trim(),amt=num($('b-amt').value),date=$('b-date').value;
+  if(!who)return fail('Escribe quién te debe.','b-who');
+  if(!(amt>0))return fail('Escribe el monto con números, por ejemplo 19.','b-amt');
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return fail('Elige la fecha.','b-date');
+  var id=S.sheet.id==='new'?newId('b'):S.sheet.id;
+  var old=S.cobros.find(function(x){return x.id===id;});
+  if(old&&old.paid&&old.xid){S.extras=S.extras.filter(function(x){return x.id!==old.xid;});}
+  var o=normB(id,{who:who,note:$('b-note').value.trim(),amount:r2(amt),date:date,paid:'',xid:'',t:old?old.t:Date.now()});
+  S.cobros=S.cobros.filter(function(x){return x.id!==id;}).concat([o]);
+  persist();closeSheet();render();toast('Por cobrar guardado');
+}
+function toggleCobro(id){
+  var b=S.cobros.find(function(x){return x.id===id;});if(!b)return;
+  if(b.paid){
+    S.extras=S.extras.filter(function(x){return x.id!==b.xid;});b.paid='';b.xid='';
+  }else{
+    var xid=newId('x'),d=todayStr();
+    S.extras=S.extras.concat([normX(xid,{name:'Cobro: '+b.who+(b.note?' ('+b.note+')':''),amount:b.amount,date:d,t:Date.now()})]);
+    b.paid=d;b.xid=xid;
+  }
+  persist();render();toast(b.paid?'Cobrado. Entró a tus ingresos':'Marcado como pendiente');
+}
+function cobrosHtml(){
+  var pend=S.cobros.filter(function(b){return !b.paid;}).sort(function(a,b){return a.date<b.date?-1:1;});
+  var tot=r2(pend.reduce(function(s,b){return s+b.amount;},0));
+  var done=S.cobros.filter(function(b){return b.paid;}).sort(function(a,b){return a.paid<b.paid?1:-1;}).slice(0,3);
+  var row=function(b){
+    return '<li class="row'+(b.paid?' is-paid':'')+'"><button type="button" class="row-main" data-act="bopen" data-id="'+esc(b.id)+'"><span class="date"><b>'+(+b.date.slice(8))+'</b><em>'+MON[+b.date.slice(5,7)-1]+'</em></span><span class="info"><span class="name">'+esc(b.who)+'</span><span class="meta"><span>'+esc(b.note||'Sin detalle')+'</span>'+(b.paid?'<span class="chip ok">Cobrado</span>':'')+'</span></span><span class="amt">'+fmt(b.amount)+'</span></button>'+
+      '<button type="button" class="check" data-act="btoggle" data-id="'+esc(b.id)+'" aria-pressed="'+!!b.paid+'" aria-label="'+(b.paid?'Marcar como pendiente: ':'Marcar como cobrado: ')+esc(b.who)+'">'+ICON.check+'</button></li>';
+  };
+  var h='<p class="eyebrow" style="margin:20px 8px 8px">Por cobrar · '+fmt(tot)+' pendiente</p>';
+  if(!S.cobros.length)h+='<div class="empty"><h3>Nadie te debe</h3><p>Si pagaste algo que otra persona te va a devolver, anótalo aquí.</p></div>';
+  else h+='<ul class="list">'+pend.map(row).join('')+done.map(row).join('')+'</ul>';
+  return h+'<button type="button" class="btn ghost" data-act="badd" style="margin:10px 8px 0">Agregar por cobrar</button>';
+}
 function imodel(M){
   var key=M.key,md=S.meses[key]||{},rec=md.ing||{},last=dim(S.y,S.m);
   var fijos=S.ingresos.slice().sort(function(a,b){return a.day-b.day||a.o-b.o;}).map(function(i){return {i:i,due:Math.min(i.day,last),got:!!rec[i.id]};});
@@ -1087,6 +1146,7 @@ function renderIMain(M,I){
       return '<li><button type="button" class="row-main" data-act="xopen" data-id="'+esc(x.id)+'" style="width:100%"><span class="date"><b>'+d+'</b><em>'+MON[S.m]+'</em></span><span class="info"><span class="name">'+esc(x.name)+'</span><span class="meta"><span class="chip ok">Extra</span></span></span><span class="amt">'+fmt(x.amount)+'</span></button></li>';
     }).join('')+'</ul>';
   }
+  h+=cobrosHtml();
   $('main').innerHTML=h;
 }
 function ingresoForm(kind,o){
@@ -1213,6 +1273,7 @@ function openSheet(id,kind){
   else if(kind==='g')body.innerHTML=gastoForm(id==='new'?null:S.gastos.find(function(x){return x.id===id;}));
   else if(kind==='c')body.innerHTML=cuentaForm(id==='new'?null:S.cuentas.find(function(x){return x.id===id;}));
   else if(kind==='i')body.innerHTML=ingresoForm('i',id==='new'?null:S.ingresos.find(function(x){return x.id===id;}));
+  else if(kind==='b')body.innerHTML=cobroForm(id==='new'?null:S.cobros.find(function(x){return x.id===id;}));
   else if(kind==='x')body.innerHTML=ingresoForm('x',S.extras.find(function(x){return x.id===id;}));
   else if(kind==='a')body.innerHTML=metaForm(id==='new'?null:S.metas.find(function(x){return x.id===id;}));
   else body.innerHTML=formHtml(id==='new'?null:S.pagos.find(function(x){return x.id===id;}));
@@ -1319,10 +1380,11 @@ function delItem(){
   else if(k==='c'){S.cuentas=S.cuentas.filter(function(x){return x.id!==id;});S.snaps=S.snaps.filter(function(x){return x.cuenta!==id;});}
   else if(k==='i')S.ingresos=S.ingresos.filter(function(x){return x.id!==id;});
   else if(k==='x')S.extras=S.extras.filter(function(x){return x.id!==id;});
+  else if(k==='b'){var cb=S.cobros.find(function(x){return x.id===id;});if(cb&&cb.xid)S.extras=S.extras.filter(function(x){return x.id!==cb.xid;});S.cobros=S.cobros.filter(function(x){return x.id!==id;});}
   else if(k==='a'){S.metas=S.metas.filter(function(x){return x.id!==id;});S.movs=S.movs.filter(function(x){return x.meta!==id;});}
   else S.pagos=S.pagos.filter(function(x){return x.id!==id;});
   persist();closeSheet();render();
-  toast({g:'Gasto eliminado',a:'Meta eliminada',c:'Cuenta eliminada',i:'Ingreso eliminado',x:'Ingreso eliminado'}[k]||'Pago eliminado');
+  toast({g:'Gasto eliminado',a:'Meta eliminada',c:'Cuenta eliminada',i:'Ingreso eliminado',x:'Ingreso eliminado',b:'Eliminado'}[k]||'Pago eliminado');
 }
 
 /* ---------- respaldo ---------- */
@@ -1375,7 +1437,7 @@ function importFile(file){
       var v=normV(r.id,r);S.movs=S.movs.filter(function(x){return x.id!==v.id;}).concat([v]);
     });
     var nc=0;
-    [['cuentas',normC,500],['snaps',normSn,50000],['ingresos',normI,200],['extras',normX,20000],['transf',normT,20000]].forEach(function(d){
+    [['cuentas',normC,500],['snaps',normSn,50000],['ingresos',normI,200],['extras',normX,20000],['cobros',normB,5000],['transf',normT,20000]].forEach(function(d){
       (Array.isArray(j[d[0]])?j[d[0]].slice(0,d[2]):[]).forEach(function(r){
         if(!r||!okId.test(String(r.id)))return;
         var o=d[1](r.id,r);S[d[0]]=S[d[0]].filter(function(x){return x.id!==o.id;}).concat([o]);
@@ -1490,6 +1552,9 @@ document.addEventListener('click',function(e){
   else if(a==='copen')openSheet(el.dataset.id,'c');
   else if(a==='iopen')openSheet(el.dataset.id,'i');
   else if(a==='xopen')openSheet(el.dataset.id,'x');
+  else if(a==='bopen')openSheet(el.dataset.id,'b');
+  else if(a==='badd')openSheet('new','b');
+  else if(a==='btoggle')toggleCobro(el.dataset.id);
   else if(a==='itoggle')toggleIng(el.dataset.id);
   else if(a==='view'){S.view=el.dataset.v;try{localStorage.setItem('finanzas-vista',S.view);}catch(x){}render();window.scrollTo(0,0);}
   else if(a==='add')openSheet('new',{gastos:'g',ahorros:'a',cuentas:'c',inicio:'i'}[S.view]||'');
@@ -1521,6 +1586,7 @@ document.addEventListener('submit',function(e){
   else if(id==='cform')submitCuenta(e);
   else if(id==='sform')submitSaldo(e);
   else if(id==='iform')submitIngreso(e);
+  else if(id==='bform')submitCobro(e);
   else if(id==='planform')submitPlan(e);
   else if(id==='tform')submitTransf(e);
   else if(id==='prform')submitPresup(e);
