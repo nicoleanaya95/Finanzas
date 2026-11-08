@@ -1053,7 +1053,7 @@ function cobroForm(o){
   var isNew=!o,v=o||{who:'',note:'',amount:'',date:todayStr(),paid:''};
   return '<h2 id="sheet-title">'+(isNew?'Nuevo por cobrar':'Editar por cobrar')+'</h2><p class="sub">Dinero que pagaste tú y alguien te debe. No cuenta como ingreso hasta que te lo paguen.</p>'+
     '<form id="bform" novalidate>'+
-      '<div class="field"><label for="b-who">Quién te debe</label><input type="text" id="b-who" maxlength="50" autocomplete="off" placeholder="Ej. Mi hermana, Katherine" value="'+esc(v.who)+'"></div>'+
+      '<div class="field"><label for="b-who">Quién te debe</label><input type="text" id="b-who" maxlength="50" autocomplete="off" placeholder="Ej. Mi hermana, un amigo" value="'+esc(v.who)+'"></div>'+
       '<div class="field"><label for="b-note">Por qué</label><input type="text" id="b-note" maxlength="80" autocomplete="off" placeholder="Ej. Kokoa, almuerzo" value="'+esc(v.note)+'"></div>'+
       '<div class="two"><div class="field"><label for="b-amt">Monto ($)</label><input type="text" id="b-amt" inputmode="decimal" autocomplete="off" value="'+(v.amount===''?'':esc(v.amount))+'"></div>'+
       '<div class="field"><label for="b-date">Fecha</label><input type="date" id="b-date" value="'+esc(v.date)+'"></div></div>'+
