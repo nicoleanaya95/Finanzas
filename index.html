@@ -244,7 +244,7 @@ body{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 var MONTHS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 var MON=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 var KINDS={tarjeta:'Tarjeta',prestamo:'Préstamo',suscripcion:'Suscripción',servicio:'Servicio',seguro:'Seguro',familia:'Apoyo personal',cuchubal:'Cuchubal',otro:'Otro'};
-var KATS={super:'Supermercado',comida:'Restaurantes y comida rápida',cafe:'Café, postres y antojos',gasolina:'Gasolina',transporte:'Uber, taxi y parqueo',carro:'Carro: mantenimiento y repuestos',salud:'Farmacia y médico',vet:'Mascotas y veterinaria',personal:'Cuidado personal',ropa:'Ropa, zapatos y bolsos',hogar:'Casa y hogar',ocio:'Salidas y ocio',regalos:'Regalos',viajes:'Viajes',educacion:'Educación y cursos',compras:'Otras compras',otro:'Otro / sin clasificar'};
+var KATS={super:'Supermercado',comida:'Restaurantes',cafe:'Café y antojos',gasolina:'Gasolina',transporte:'Uber y parqueo',carro:'Carro',salud:'Farmacia y médico',vet:'Mascotas',personal:'Cuidado personal',ropa:'Ropa y zapatos',hogar:'Casa y hogar',ocio:'Salidas y ocio',regalos:'Regalos',viajes:'Viajes',educacion:'Educación',compras:'Otras compras',otro:'Otro / sin clasificar'};
 var KGROUPS=[['Comida',['super','comida','cafe']],['Transporte',['gasolina','transporte','carro']],['Salud y mascotas',['salud','vet']],['Personal',['personal','ropa']],['Casa',['hogar']],['Vida y ocio',['ocio','regalos','viajes','educacion']],['Otros',['compras','otro']]];
 function katOpts(sel){return KGROUPS.map(function(g){return '<optgroup label="'+g[0]+'">'+g[1].map(function(k){return '<option value="'+k+'"'+(sel===k?' selected':'')+'>'+KATS[k]+'</option>';}).join('')+'</optgroup>';}).join('');}
 var WD=['dom','lun','mar','mié','jue','vie','sáb'];
@@ -1219,6 +1219,12 @@ function renderIHero(M,I){
 }
 function renderIMain(M,I){
   var C=cmodel(),h='';
+  // acciones rápidas
+  h+='<div class="quick" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px"><button type="button" class="btn ghost" data-act="qadd">+ Gasto</button><button type="button" class="btn ghost" data-act="scan">Escanear</button><button type="button" class="btn ghost" data-act="cash">Efectivo</button></div>';
+  // dinero disponible hoy
+  var disp=0,efv=0,hasD=false;
+  S.cuentas.forEach(function(c){if(c.type==='efectivo'){efv+=c.saldo;disp+=c.saldo;hasD=true;}else if(c.type==='ahorro'||c.type==='corriente'||c.type==='digital'){disp+=c.saldo;hasD=true;}});
+  if(hasD)h+='<button type="button" class="meta-card" data-act="view" data-v="cuentas" style="margin-top:12px"><span class="top2"><span class="name">Disponible ahora</span><span class="amt">'+fmt(r2(disp))+'</span></span><span class="sub2"><span>Bancos y efectivo · efectivo '+fmt(r2(efv))+'</span><span>Ver cuentas</span></span></button>';
   // patrimonio
   h+='<button type="button" class="meta-card" data-act="view" data-v="cuentas" style="margin-top:20px"><span class="top2"><span class="name">Patrimonio neto</span><span class="amt">'+fmt(C.neto)+'</span></span>'+
     '<span class="sub2"><span>Tengo '+fmt(C.activos)+' · Debo '+fmt(C.deudas)+'</span><span>'+(S.cuentas.length?'Ver cuentas':'Agregar cuentas')+'</span></span></button>';
@@ -1659,6 +1665,7 @@ document.addEventListener('click',function(e){
   else if(a==='transf')openSheet('transf');
   else if(a==='cash')openSheet('transf','cash');
   else if(a==='scan')openSheet('scan');
+  else if(a==='qadd')openSheet('new','g');
   else if(a==='presup')openSheet('presup');
   else if(a==='per'){S.per=el.dataset.v;render();}
   else if(a==='tdel')delTransf(el.dataset.id,el);
