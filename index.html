@@ -245,8 +245,10 @@ var MONTHS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','s
 var MON=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 var KINDS={tarjeta:'Tarjeta',prestamo:'Préstamo',suscripcion:'Suscripción',servicio:'Servicio',seguro:'Seguro',familia:'Apoyo personal',cuchubal:'Cuchubal',otro:'Otro'};
 var KATS={super:'Supermercado',comida:'Restaurantes',cafe:'Café y antojos',gasolina:'Gasolina',transporte:'Uber y parqueo',carro:'Carro',salud:'Farmacia y médico',vet:'Mascotas',personal:'Cuidado personal',ropa:'Ropa y zapatos',hogar:'Casa y hogar',ocio:'Salidas y ocio',regalos:'Regalos',viajes:'Viajes',educacion:'Educación',compras:'Otras compras',otro:'Otro / sin clasificar'};
+var KEM={super:'🛒',comida:'🍔',cafe:'☕',gasolina:'⛽',transporte:'🚕',carro:'🚗',salud:'💊',vet:'🐶',personal:'💅',ropa:'👗',hogar:'🏠',ocio:'🎉',regalos:'🎁',viajes:'✈️',educacion:'📚',compras:'🛍️',otro:'✨'};
+function kl(k){return (KEM[k]||'')+' '+KATS[k];}
 var KGROUPS=[['Comida',['super','comida','cafe']],['Transporte',['gasolina','transporte','carro']],['Salud y mascotas',['salud','vet']],['Personal',['personal','ropa']],['Casa',['hogar']],['Vida y ocio',['ocio','regalos','viajes','educacion']],['Otros',['compras','otro']]];
-function katOpts(sel){return KGROUPS.map(function(g){return '<optgroup label="'+g[0]+'">'+g[1].map(function(k){return '<option value="'+k+'"'+(sel===k?' selected':'')+'>'+KATS[k]+'</option>';}).join('')+'</optgroup>';}).join('');}
+function katOpts(sel){return KGROUPS.map(function(g){return '<optgroup label="'+g[0]+'">'+g[1].map(function(k){return '<option value="'+k+'"'+(sel===k?' selected':'')+'>'+kl(k)+'</option>';}).join('')+'</optgroup>';}).join('');}
 var WD=['dom','lun','mar','mié','jue','vie','sáb'];
 var ICON={
   left:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -560,7 +562,7 @@ function presupHtml(G){
     var lim=presupFor(k,per),g=r2(G.byCat[k]||0);tp+=lim;tg+=g;
     var pct=lim>0?Math.min(100,Math.round(g/lim*100)):100,over=r2(g-lim);
     var chip=lim<=0?'<span class="chip soon">Sin presupuesto</span>':over>0.005?'<span class="chip late">Te pasaste '+fmt(over)+'</span>':'<span class="chip ok">Quedan '+fmt(-over)+'</span>';
-    return '<li style="padding:10px 14px"><div class="top2" style="display:flex;justify-content:space-between;gap:12px"><span class="name" style="font-size:15px">'+KATS[k]+'</span><span style="font-variant-numeric:tabular-nums;font-size:14px"><b>'+fmt(g)+'</b>'+(lim>0?' de '+fmt(lim):'')+'</span></div>'+
+    return '<li style="padding:10px 14px"><div class="top2" style="display:flex;justify-content:space-between;gap:12px"><span class="name" style="font-size:15px">'+kl(k)+'</span><span style="font-variant-numeric:tabular-nums;font-size:14px"><b>'+fmt(g)+'</b>'+(lim>0?' de '+fmt(lim):'')+'</span></div>'+
       '<div class="bar" style="height:8px;margin-top:8px"><i style="width:'+pct+'%;background:'+(over>0.005?'var(--late)':pct>=80?'var(--warn)':'var(--accent)')+'"></i></div><div style="margin-top:6px">'+chip+'</div></li>';
   }).join('');
   return '<div style="display:flex;justify-content:space-between;align-items:baseline;margin:20px 8px 8px"><p class="eyebrow" style="margin:0">Presupuesto · '+fmt(r2(tg))+' de '+fmt(r2(tp))+'</p><button type="button" class="btn ghost" data-act="presup" style="min-height:36px;padding:0 12px;font-size:13px">Editar</button></div><ul class="list">'+rows+'</ul>';
@@ -587,7 +589,7 @@ function renderGMain(G){
   var html='',last='';
   G.list.forEach(function(g){
     if(g.date!==last){last=g.date;html+='<li class="dayhead"><span>'+dayLabel(g.date)+'</span><b>'+fmt(r2(G.days[g.date]))+'</b></li>';}
-    html+='<li><button type="button" class="grow" data-act="gopen" data-id="'+esc(g.id)+'"><span class="info"><span class="name">'+esc(g.note||KATS[g.cat])+'</span><span class="meta"><span class="chip">'+KATS[g.cat]+'</span>'+(function(){var c=g.ap&&S.cuentas.find(function(x){return x.id===g.ap.cuenta;});return c?'<span class="chip'+(c.type==='credito'?' soon':'')+'">'+esc(c.name)+'</span>':'';})()+'</span></span><span class="amt">'+fmt(g.amount)+'</span></button></li>';
+    html+='<li><button type="button" class="grow" data-act="gopen" data-id="'+esc(g.id)+'"><span class="info"><span class="name">'+esc(g.note||KATS[g.cat])+'</span><span class="meta"><span class="chip">'+kl(g.cat)+'</span>'+(function(){var c=g.ap&&S.cuentas.find(function(x){return x.id===g.ap.cuenta;});return c?'<span class="chip'+(c.type==='credito'?' soon':'')+'">'+esc(c.name)+'</span>':'';})()+'</span></span><span class="amt">'+fmt(g.amount)+'</span></button></li>';
   });
   el.innerHTML=top+'<p class="eyebrow" style="margin:20px 8px 8px">Gastos</p><ul class="list">'+html+'</ul>'+hist;
 }
@@ -1219,8 +1221,15 @@ function renderIHero(M,I){
       line('Ingresos del mes',I.esperado)+line('Pagos fijos',M.bolsa,true)+line('Gastos de tu bolsa',I.gastos,true)+line('Apartado para ahorro',I.ahorro,true)+
     '</div>'+(M.planilla>0?'<div class="nexts"><p class="next">'+fmt(M.planilla)+' de descuentos de planilla no se restan aquí porque ya vienen descontados de tu salario.</p></div>':'')+(I.tarjeta>0?'<div class="nexts"><p class="next">Además cargaste <b>'+fmt(I.tarjeta)+'</b> a tarjetas. No resta aquí porque lo pagas cuando pagas la tarjeta.</p></div>':'');
 }
+var PIG='<svg viewBox="0 0 120 90" width="76" height="58" aria-hidden="true" focusable="false"><g fill="none" stroke="#8a4b5c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="62" cy="14" r="9" fill="#F7D774"/><path d="M62 10v8M58 14h8" stroke="#b08a1e" stroke-width="2.4"/><ellipse cx="58" cy="54" rx="38" ry="26" fill="#F6B1C3"/><path d="M30 36l-6-12 14 6" fill="#F6B1C3"/><path d="M84 52c7 0 12 3 12 8s-5 8-12 8" fill="#F6B1C3"/><path d="M42 76v8M74 76v8"/><circle cx="46" cy="48" r="2.4" fill="#8a4b5c"/><path d="M52 28h22" /></g></svg>';
+var AMIGO=['Paso a paso, vas bien.','Cada gasto anotado es un paso hacia tu viaje.','Ordenar tu plata también es cuidarte.','Hoy basta con anotar lo de hoy.','Lo difícil ya lo empezaste.','Las deudas se acaban; tu plan ya está en marcha.','Un día a la vez.'];
+function amigoHtml(){
+  var d=new Date(),i=(d.getFullYear()*372+d.getMonth()*31+d.getDate())%AMIGO.length;
+  return '<div class="amigo" style="display:flex;align-items:center;gap:12px;margin:14px 0 0;padding:12px 14px;border-radius:16px;background:var(--hero,#E6F4EF);color:var(--ink,#16332c)">'+PIG+'<p style="margin:0;font-size:15px;line-height:1.35;font-weight:600">'+AMIGO[i]+'</p></div>';
+}
 function renderIMain(M,I){
   var C=cmodel(),h='';
+  h+=amigoHtml();
   // acciones rápidas
   h+='<div class="quick" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px"><button type="button" class="btn ghost" data-act="qadd">+ Gasto</button><button type="button" class="btn ghost" data-act="scan">Escanear</button><button type="button" class="btn ghost" data-act="cash">Efectivo</button></div>';
   // dinero disponible hoy
