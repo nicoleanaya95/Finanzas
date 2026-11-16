@@ -881,7 +881,7 @@ var CTYPES={ahorro:'Cuenta de ahorro',corriente:'Cuenta corriente',digital:'Bill
 var isDebt=function(t){return t==='credito'||t==='prestamo';};
 function normC(id,d){
   d=d||{};
-  return {id:String(id),name:String(d.name||'Cuenta'),type:CTYPES[d.type]?d.type:'otro',inst:String(d.inst||''),saldo:Number(d.saldo)||0,limite:Math.max(0,Number(d.limite)||0),tasa:Math.max(0,Number(d.tasa)||0),note:String(d.note||''),upd:/^\d{4}-\d{2}-\d{2}$/.test(String(d.upd))?String(d.upd):'',o:Number(d.o)||0};
+  return {id:String(id),name:String(d.name||'Cuenta'),type:CTYPES[d.type]?d.type:'otro',inst:String(d.inst||''),saldo:Number(d.saldo)||0,limite:Math.max(0,Number(d.limite)||0),tasa:Math.max(0,Number(d.tasa)||0),note:String(d.note||''),upd:/^\d{4}-\d{2}-\d{2}$/.test(String(d.upd))?String(d.upd):'',o:Number(d.o)||0,apart:Math.max(0,Number(d.apart)||0),apartNote:String(d.apartNote||'').slice(0,80)};
 }
 function normSn(id,d){
   d=d||{};
@@ -916,7 +916,7 @@ function cRow(c){
   var chip='<span class="chip'+(c.upd&&daysAgo(c.upd).match(/hace (\d+)/)&&+RegExp.$1>30?' soon':'')+'">'+daysAgo(c.upd)+'</span>';
   var use='';
   if(debt&&c.limite>0)use=c.type==='prestamo'?'<span class="chip ok">'+Math.max(0,Math.round((1-Math.abs(c.saldo)/c.limite)*100))+'% pagado</span>':'<span class="chip">'+Math.round(Math.abs(c.saldo)/c.limite*100)+'% del límite</span>';
-  return '<li><button type="button" class="grow" data-act="copen" data-id="'+esc(c.id)+'"><span class="info"><span class="name">'+esc(c.name)+'</span><span class="meta"><span>'+sub+'</span>'+chip+use+'</span></span><span class="amt"'+(debt?' style="color:var(--late)"':'')+'>'+(debt?'−':'')+fmt(Math.abs(c.saldo))+'</span></button></li>';
+  return '<li><button type="button" class="grow" data-act="copen" data-id="'+esc(c.id)+'"><span class="info"><span class="name">'+esc(c.name)+'</span><span class="meta"><span>'+sub+'</span>'+chip+use+(c.apart>0?'<span class="chip soon">Apartado '+fmt(c.apart)+(c.apartNote?' · '+esc(c.apartNote):'')+'</span>':'')+'</span></span><span class="amt"'+(debt?' style="color:var(--late)"':'')+'>'+(debt?'−':'')+fmt(Math.abs(c.saldo))+'</span></button></li>';
 }
 function renderCMain(C){
   var el=$('main');
@@ -967,7 +967,9 @@ function cuentaForm(c){
     '<div class="two" id="c-lim-f"'+(isDebt(v.type)?'':' hidden')+'><div class="field"><label for="c-lim">Límite o monto original ($)</label><input type="text" id="c-lim" inputmode="decimal" autocomplete="off" placeholder="Opcional" value="'+(v.limite?esc(v.limite):'')+'"></div>'+
     '<div class="field"><label for="c-tasa">Tasa anual (%)</label><input type="text" id="c-tasa" inputmode="decimal" autocomplete="off" placeholder="Ej. 8.74" value="'+(v.tasa?esc(v.tasa):'')+'"></div></div>'+
     '<div class="field"><label for="c-note">Nota (opcional)</label><input type="text" id="c-note" maxlength="80" autocomplete="off" placeholder="Ej. tasa 4 %, últimos 4 dígitos" value="'+esc(v.note)+'"></div>'+
-    '<p class="hint">No guardes números de cuenta completos ni claves.</p>'+
+    '<div class="two" id="c-ap-f"'+(isDebt(v.type)?' hidden':'')+'><div class="field"><label for="c-ap">Apartado ($)</label><input type="text" id="c-ap" inputmode="decimal" autocomplete="off" placeholder="0" value="'+(v.apart?esc(v.apart):'')+'"></div>'+
+    '<div class="field"><label for="c-apn">Para qué o de quién</label><input type="text" id="c-apn" maxlength="80" autocomplete="off" placeholder="Ej. para la U" value="'+esc(v.apartNote||'')+'"></div></div>'+
+    '<p class="hint">Apartado es plata que está en la cuenta pero no es tuya o ya tiene dueño. No cuenta como disponible. No guardes números de cuenta completos ni claves.</p>'+
     '<p class="err" id="f-err" role="alert" hidden></p>'+
     '<div class="actions"><button type="submit" class="btn '+(isNew?'primary':'ghost')+'">'+(isNew?'Agregar cuenta':'Guardar cambios')+'</button>'+
     '<div class="row2"><button type="button" class="btn ghost" data-act="close">Cerrar</button>'+
@@ -994,7 +996,7 @@ function submitCuenta(e){
     saldo=r2(Math.abs(saldo));
     S.snaps.push(normSn(newId('s'),{cuenta:id,saldo:saldo,date:upd,t:Date.now()}));
   }
-  S.cuentas=S.cuentas.filter(function(x){return x.id!==id;}).concat([normC(id,{name:name,type:$('c-type').value,inst:$('c-inst').value.trim(),saldo:saldo,limite:r2(lim),tasa:tasa,note:$('c-note').value.trim(),upd:upd,o:old?old.o:Date.now()})]);
+  S.cuentas=S.cuentas.filter(function(x){return x.id!==id;}).concat([normC(id,{name:name,type:$('c-type').value,inst:$('c-inst').value.trim(),saldo:saldo,limite:r2(lim),tasa:tasa,note:$('c-note').value.trim(),upd:upd,o:old?old.o:Date.now(),apart:Math.max(0,r2(num($('c-ap').value)||0)),apartNote:$('c-apn').value.trim()})]);
   persist();closeSheet();render();
   toast(old?'Cuenta guardada':'Cuenta agregada');
 }
@@ -1223,8 +1225,8 @@ function renderIMain(M,I){
   h+='<div class="quick" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px"><button type="button" class="btn ghost" data-act="qadd">+ Gasto</button><button type="button" class="btn ghost" data-act="scan">Escanear</button><button type="button" class="btn ghost" data-act="cash">Efectivo</button></div>';
   // dinero disponible hoy
   var disp=0,efv=0,hasD=false;
-  S.cuentas.forEach(function(c){if(c.type==='efectivo'){efv+=c.saldo;disp+=c.saldo;hasD=true;}else if(c.type==='ahorro'||c.type==='corriente'||c.type==='digital'){disp+=c.saldo;hasD=true;}});
-  if(hasD)h+='<button type="button" class="meta-card" data-act="view" data-v="cuentas" style="margin-top:12px"><span class="top2"><span class="name">Disponible ahora</span><span class="amt">'+fmt(r2(disp))+'</span></span><span class="sub2"><span>Bancos y efectivo · efectivo '+fmt(r2(efv))+'</span><span>Ver cuentas</span></span></button>';
+  S.cuentas.forEach(function(c){var lib=c.saldo-(c.apart||0);if(c.type==='efectivo'){efv+=lib;disp+=lib;hasD=true;}else if(c.type==='ahorro'||c.type==='corriente'||c.type==='digital'){disp+=lib;hasD=true;}});
+  if(hasD)h+='<button type="button" class="meta-card" data-act="view" data-v="cuentas" style="margin-top:12px"><span class="top2"><span class="name">Disponible ahora</span><span class="amt">'+fmt(r2(disp))+'</span></span><span class="sub2"><span>Lo tuyo, sin lo apartado · efectivo '+fmt(r2(efv))+'</span><span>Ver cuentas</span></span></button>';
   // patrimonio
   h+='<button type="button" class="meta-card" data-act="view" data-v="cuentas" style="margin-top:20px"><span class="top2"><span class="name">Patrimonio neto</span><span class="amt">'+fmt(C.neto)+'</span></span>'+
     '<span class="sub2"><span>Tengo '+fmt(C.activos)+' · Debo '+fmt(C.deudas)+'</span><span>'+(S.cuentas.length?'Ver cuentas':'Agregar cuentas')+'</span></span></button>';
@@ -1699,7 +1701,7 @@ document.addEventListener('submit',function(e){
 document.addEventListener('change',function(e){
   if(e.target.id==='imp'&&e.target.files&&e.target.files[0])importFile(e.target.files[0]);
   if(e.target.id==='scan-file'&&e.target.files&&e.target.files[0])doScan(e.target.files[0]);
-  if(e.target.id==='c-type')$('c-lim-f').hidden=!isDebt(e.target.value);
+  if(e.target.id==='c-type'){$('c-lim-f').hidden=!isDebt(e.target.value);if($('c-ap-f'))$('c-ap-f').hidden=isDebt(e.target.value);}
   if(e.target.id==='i-rep'){var x=e.target.value==='x';$('i-day-f').hidden=x;$('i-date-f').hidden=!x;}
 });
 document.addEventListener('keydown',function(e){
