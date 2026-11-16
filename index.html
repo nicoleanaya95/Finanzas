@@ -244,7 +244,9 @@ body{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 var MONTHS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 var MON=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 var KINDS={tarjeta:'Tarjeta',prestamo:'Préstamo',suscripcion:'Suscripción',servicio:'Servicio',seguro:'Seguro',familia:'Apoyo personal',cuchubal:'Cuchubal',otro:'Otro'};
-var KATS={comida:'Comidas fuera',super:'Supermercado',gasolina:'Gasolina',transporte:'Transporte',salud:'Salud',vet:'Veterinaria',personal:'Cuidado personal',hogar:'Casa',ropa:'Ropa, zapatos y bolsos',compras:'Otras compras',ocio:'Salidas y ocio',regalos:'Regalos',otro:'Otro'};
+var KATS={super:'Supermercado',comida:'Restaurantes y comida rápida',cafe:'Café, postres y antojos',gasolina:'Gasolina',transporte:'Uber, taxi y parqueo',carro:'Carro: mantenimiento y repuestos',salud:'Farmacia y médico',vet:'Mascotas y veterinaria',personal:'Cuidado personal',ropa:'Ropa, zapatos y bolsos',hogar:'Casa y hogar',ocio:'Salidas y ocio',regalos:'Regalos',viajes:'Viajes',educacion:'Educación y cursos',compras:'Otras compras',otro:'Otro / sin clasificar'};
+var KGROUPS=[['Comida',['super','comida','cafe']],['Transporte',['gasolina','transporte','carro']],['Salud y mascotas',['salud','vet']],['Personal',['personal','ropa']],['Casa',['hogar']],['Vida y ocio',['ocio','regalos','viajes','educacion']],['Otros',['compras','otro']]];
+function katOpts(sel){return KGROUPS.map(function(g){return '<optgroup label="'+g[0]+'">'+g[1].map(function(k){return '<option value="'+k+'"'+(sel===k?' selected':'')+'>'+KATS[k]+'</option>';}).join('')+'</optgroup>';}).join('');}
 var WD=['dom','lun','mar','mié','jue','vie','sáb'];
 var ICON={
   left:'<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -301,6 +303,7 @@ function apply(j){
   S.cobros=(j.cobros||[]).map(function(b){return normB(b.id,b);});
   S.transf=(j.transf||[]).map(function(t){return normT(t.id,t);});
   S.plan=normPlan(j.plan);
+  if(!S.cuentas.some(function(c){return c.type==='efectivo';}))S.cuentas.unshift(normC('c_efectivo',{name:'Efectivo',type:'efectivo',saldo:0,o:0,upd:ymd(new Date())}));
   S.presup={};var pr=j.presup||{};Object.keys(pr).forEach(function(k){var v=Number(pr[k]);if(KATS[k]&&v>0)S.presup[k]=v;});
 }
 function normPlan(pl){
@@ -590,7 +593,7 @@ function renderGMain(G){
 }
 function presupForm(){
   return '<h2 id="sheet-title">Presupuesto del mes</h2><p class="sub">Cuánto quieres gastar al mes en cada categoría. En quincena se usa la mitad y en semana mes × 12 ÷ 52.</p><form id="prform" novalidate><div class="two">'+
-    Object.keys(KATS).map(function(k){return '<div class="field"><label for="pr-'+k+'">'+KATS[k]+'</label><input type="text" id="pr-'+k+'" data-k="'+k+'" inputmode="decimal" autocomplete="off" placeholder="0" value="'+((S.presup||{})[k]||'')+'"></div>';}).join('')+
+    KGROUPS.reduce(function(a,g){return a.concat(g[1]);},[]).map(function(k){return '<div class="field"><label for="pr-'+k+'">'+KATS[k]+'</label><input type="text" id="pr-'+k+'" data-k="'+k+'" inputmode="decimal" autocomplete="off" placeholder="0" value="'+((S.presup||{})[k]||'')+'"></div>';}).join('')+
     '</div><div class="actions"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-act="close">Cancelar</button></div></form>';
 }
 function submitPresup(e){
@@ -607,8 +610,9 @@ function dayLabel(ds){
 function srcField(sel){
   if(!S.cuentas.length)return '';
   var opt=function(c){return '<option value="'+esc(c.id)+'"'+(sel===c.id?' selected':'')+'>'+esc(c.name)+'</option>';};
-  var tj=S.cuentas.filter(function(c){return c.type==='credito';}),ct=S.cuentas.filter(function(c){return !isDebt(c.type);});
-  return '<div class="field"><label for="g-src">Pagado con</label><select id="g-src"><option value="">Efectivo o sin especificar</option>'+
+  var tj=S.cuentas.filter(function(c){return c.type==='credito';}),ef=S.cuentas.filter(function(c){return c.type==='efectivo';}),ct=S.cuentas.filter(function(c){return !isDebt(c.type)&&c.type!=='efectivo';});
+  return '<div class="field"><label for="g-src">Pagado con</label><select id="g-src"><option value="">Sin especificar</option>'+
+    (ef.length?'<optgroup label="Efectivo (se descuenta de tu efectivo)">'+ef.map(opt).join('')+'</optgroup>':'')+
     (tj.length?'<optgroup label="Tarjeta de crédito (se suma a lo que debes)">'+tj.map(opt).join('')+'</optgroup>':'')+
     (ct.length?'<optgroup label="Débito o cuenta (se descuenta del saldo)">'+ct.map(opt).join('')+'</optgroup>':'')+
     '</select></div>';
@@ -616,7 +620,7 @@ function srcField(sel){
 function gastoForm(g){
   var isNew=!g;
   var v=g||{amount:'',note:'',cat:'otro',date:todayStr()};
-  var cats=Object.keys(KATS).map(function(k){return '<option value="'+k+'"'+(v.cat===k?' selected':'')+'>'+KATS[k]+'</option>';}).join('');
+  var cats=katOpts(v.cat);
   return '<h2 id="sheet-title">'+(isNew?'Nuevo gasto':'Editar gasto')+'</h2>'+
     '<form id="gform" novalidate>'+
       '<div class="field"><label for="g-amt">Monto ($)</label><input type="text" id="g-amt" inputmode="decimal" autocomplete="off" placeholder="0.00" value="'+(v.amount===''?'':esc(v.amount))+'"></div>'+
@@ -839,7 +843,7 @@ function renderCMain(C){
   }
   if(C.act.length)h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que tengo · '+fmt(C.activos)+'</p><ul class="list">'+C.act.map(cRow).join('')+'</ul>';
   if(C.deu.length)h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que debo · '+fmt(C.deudas)+'</p><ul class="list">'+C.deu.map(cRow).join('')+'</ul>';
-  h+='<div class="actions" style="margin-top:16px"><button type="button" class="btn ghost" data-act="transf">Mover entre cuentas</button></div>';
+  h+='<div class="actions" style="margin-top:16px"><button type="button" class="btn primary" data-act="cash">Sacar efectivo</button><button type="button" class="btn ghost" data-act="transf">Mover entre cuentas</button></div>';
   var tl=S.transf.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:b.t-a.t;}).slice(0,10);
   if(tl.length)h+='<p class="eyebrow" style="margin:20px 8px 8px">Últimos movimientos</p><ul class="list hist" style="padding:4px 14px">'+tl.map(function(t){
     return '<li><span>'+esc(cName(t.de))+' → '+esc(cName(t.a))+'<small>'+dayLabel(t.date)+(t.note?' · '+esc(t.note):'')+'</small></span><span>'+fmt(t.amount)+'<button type="button" data-act="tdel" data-id="'+esc(t.id)+'" aria-label="Borrar movimiento">Borrar</button></span></li>';
@@ -935,10 +939,12 @@ function moveMoney(id,delta){
 }
 function tEffect(t,sign){moveMoney(t.de,-sign*t.amount);moveMoney(t.a,sign*t.amount);}
 function cName(id){var c=S.cuentas.find(function(x){return x.id===id;});return c?c.name:'Cuenta borrada';}
-function transfForm(){
+function transfForm(cash){
   var opt=function(sel){return S.cuentas.slice().sort(function(a,b){return a.o-b.o;}).map(function(c){return '<option value="'+esc(c.id)+'"'+(sel===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join('');};
   var last=S.transf.slice().sort(function(a,b){return b.t-a.t;})[0]||{};
-  return '<h2 id="sheet-title">Mover entre cuentas</h2>'+
+  var efId=(S.cuentas.find(function(c){return c.type==='efectivo';})||{}).id;
+  if(cash&&efId)last={de:last.de,a:efId};
+  return '<h2 id="sheet-title">'+(cash?'Sacar efectivo':'Mover entre cuentas')+'</h2>'+
     '<p class="sub">Para pasar dinero de una cuenta a otra, retirar efectivo o pagar una tarjeta desde tu cuenta. Una compra no va aquí: va en Gastos con «Pagado con».</p>'+
     '<form id="tform" novalidate>'+
       '<div class="two"><div class="field"><label for="t-de">De</label><select id="t-de">'+opt(last.de)+'</select></div>'+
@@ -1267,7 +1273,7 @@ function openSheet(id,kind){
   var body=$('sheet-body');
   if(id==='opts')body.innerHTML=optsHtml();
   else if(id==='plan')body.innerHTML=planHtml();
-  else if(id==='transf')body.innerHTML=transfForm();
+  else if(id==='transf')body.innerHTML=transfForm(kind==='cash');
   else if(id==='presup')body.innerHTML=presupForm();
   else if(id==='pinset')body.innerHTML=pinSetHtml();
   else if(kind==='g')body.innerHTML=gastoForm(id==='new'?null:S.gastos.find(function(x){return x.id===id;}));
@@ -1561,6 +1567,7 @@ document.addEventListener('click',function(e){
   else if(a==='opts')openSheet('opts');
   else if(a==='plan')openSheet('plan');
   else if(a==='transf')openSheet('transf');
+  else if(a==='cash')openSheet('transf','cash');
   else if(a==='presup')openSheet('presup');
   else if(a==='per'){S.per=el.dataset.v;render();}
   else if(a==='tdel')delTransf(el.dataset.id,el);
