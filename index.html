@@ -579,7 +579,7 @@ function historyHtml(){
   }).join('')+'</ul>';
 }
 function renderGMain(G){
-  var el=$('main'),top=presupHtml(G),hist=historyHtml();
+  var el=$('main'),top='<button type="button" class="btn ghost" data-act="scan" style="width:100%;margin:0 0 12px">Escanear ticket o captura</button>'+presupHtml(G),hist=historyHtml();
   if(!G.n){
     el.innerHTML=top+'<div class="empty" style="margin-top:20px"><h3>Sin gastos en este periodo</h3><p>Anota cada gasto que hagas, como un café o la gasolina. Solo pide el monto, una nota y la categoría.</p><button type="button" class="btn primary" data-act="add">Agregar gasto</button></div>'+hist;
     return;
@@ -617,12 +617,100 @@ function srcField(sel){
     (ct.length?'<optgroup label="Débito o cuenta (se descuenta del saldo)">'+ct.map(opt).join('')+'</optgroup>':'')+
     '</select></div>';
 }
+
+/* ---------- escanear ticket (OCR en el teléfono, nada sale del dispositivo) ---------- */
+var OCRKEY={salud:/farmacia|farm\b|farm uno|san nicol|medic|clinic|laboratorio|hospital/,regalos:/gift|regalo|flor/,cafe:/cafe|caf[eé]\b|starbucks|sorbete|helad|postre|dulce|bakery|panader|kokoa|donut/,comida:/mcdonald|wendy|pizza|popeyes|rooster|pollo|burger|restaurante|taco|kfc|subway|pupus|comedor|bistro/,gasolina:/texaco|shell|puma\b|gasolin|combustible|esso|chevron|diesel|super\s*plus/,transporte:/uber|parqueo|taxi|peaje/,ropa:/zara|prisma|moda|shopping center|zapat|boutique|bolso|ropa/,super:/selectos|super|walmart|despensa|maxi|pricesmart|market|la torre|paiz/,hogar:/ferreter|\bepa\b|freund|muebl|hogar/};
+function loadScriptOnce(src){
+  return new Promise(function(ok,no){
+    if(document.querySelector('script[data-ocr="'+src+'"]')&&window.Tesseract)return ok();
+    var sc=document.createElement('script');sc.src=src;sc.dataset.ocr=src;sc.onload=ok;sc.onerror=function(){no(new Error('No se pudo cargar el lector.'));};document.head.appendChild(sc);
+  });
+}
+function prepImg(file){
+  return new Promise(function(ok,no){
+    var url=URL.createObjectURL(file),im=new Image();
+    im.onload=function(){
+      var mx=Math.max(im.width,im.height),k=mx>2000?2000/mx:(mx<1200?1200/mx:1);
+      var cv=document.createElement('canvas');cv.width=Math.round(im.width*k);cv.height=Math.round(im.height*k);
+      var cx=cv.getContext('2d');cx.drawImage(im,0,0,cv.width,cv.height);
+      try{var d=cx.getImageData(0,0,cv.width,cv.height),p=d.data;for(var i=0;i<p.length;i+=4){var g=p[i]*0.299+p[i+1]*0.587+p[i+2]*0.114;g=g<120?Math.max(0,g-30):Math.min(255,g+30);p[i]=p[i+1]=p[i+2]=g;}cx.putImageData(d,0,0);}catch(x){}
+      URL.revokeObjectURL(url);ok(cv);
+    };
+    im.onerror=function(){URL.revokeObjectURL(url);no(new Error('No pude abrir esa imagen.'));};
+    im.src=url;
+  });
+}
+function moneyNum(t){
+  t=t.replace(/\s/g,'');
+  var lc=t.lastIndexOf(','),ld=t.lastIndexOf('.');
+  if(lc>ld)t=t.replace(/\./g,'').replace(',','.');else t=t.replace(/,/g,'');
+  var n=parseFloat(t);return isFinite(n)?n:NaN;
+}
+function parseTicket(text){
+  var lines=text.split(/\r?\n/).map(function(l){return l.trim();}).filter(Boolean);
+  var re=/(\d{1,4}(?:[.,]\d{3})*[.,]\d{2})(?!\d)/g,all=[],tot=[];
+  lines.forEach(function(l){
+    var m,low=l.toLowerCase();re.lastIndex=0;
+    while((m=re.exec(l))){var v=moneyNum(m[1]);if(!(v>0&&v<5000))continue;all.push(v);if(/total|monto|importe|a pagar|pagado|cobro|valor/.test(low)&&!/sub\s*-?\s*total|iva|impuesto|propina|cambio|efectivo|recibido/.test(low))tot.push(v);}
+  });
+  var amount=tot.length?tot[tot.length-1]:(all.length?Math.max.apply(null,all):0);
+  /* fecha */
+  var date=todayStr(),full=text.toLowerCase(),m2;
+  var okd=function(y,mo,d){var dt=new Date(y,mo-1,d);if(dt.getFullYear()!==y||dt.getMonth()!==mo-1||dt.getDate()!==d)return null;var now=new Date();if(dt>new Date(now.getFullYear(),now.getMonth(),now.getDate()+1)||now-dt>400*864e5)return null;return ymd(dt);};
+  var cand=null;
+  if((m2=/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/.exec(full)))cand=okd(+m2[3],+m2[2],+m2[1]);
+  if(!cand&&(m2=/(\d{4})[\/\-.](\d{1,2})[\/\-.](\d{1,2})/.exec(full)))cand=okd(+m2[1],+m2[2],+m2[3]);
+  if(!cand&&(m2=/(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2})(?!\d)/.exec(full)))cand=okd(2000+ +m2[3],+m2[2],+m2[1]);
+  if(!cand&&(m2=/(\d{1,2})\s*(?:de\s*)?(ene|feb|mar|abr|may|jun|jul|ago|sep|set|oct|nov|dic)[a-z]*\.?\s*(?:de\s*)?(\d{4})?/.exec(full))){var mi=MON.indexOf(m2[2]==='set'?'sep':m2[2]);cand=okd(m2[3]?+m2[3]:new Date().getFullYear(),mi+1,+m2[1]);}
+  if(cand)date=cand;
+  /* comercio */
+  var bad=/factura|ticket|\bnit\b|\bnrc\b|fecha|\btel\b|cliente|total|\biva\b|\bhora\b|\bcaja\b|cajero|documento|n[uú]mero|\bno\.|www|gracias/i,merch='';
+  for(var i=0;i<Math.min(lines.length,8);i++){var l=lines[i].replace(/[^A-Za-zÁÉÍÓÚÑáéíóúñ0-9 &'.\-]/g,' ').replace(/\s+/g,' ').trim(),letters=(l.match(/[A-Za-zÁÉÍÓÚÑáéíóúñ]/g)||[]).length;if(letters>=4&&letters>=l.length*0.6&&!bad.test(l)){merch=l;break;}}
+  if(merch.length>40)merch=merch.slice(0,40).trim();
+  if(merch&&merch===merch.toUpperCase())merch=merch.toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase();});
+  /* categoría */
+  var cat='otro',k;
+  for(k in OCRKEY){if(OCRKEY[k].test(merch.toLowerCase())){cat=k;break;}}
+  if(cat==='otro'){var hd=lines.slice(0,6).join(' ').toLowerCase();for(k in OCRKEY){if(OCRKEY[k].test(hd)){cat=k;break;}}}
+  return {amount:amount?r2(amount):'',date:date,note:merch,cat:cat};
+}
+function scanSheet(){
+  return '<h2 id="sheet-title">Escanear ticket</h2><p class="sub">Tomá una foto del ticket o elegí una captura. La lectura se hace en tu teléfono: la imagen no sale de él. Siempre vas a poder revisar los datos antes de guardar.</p>'+
+    '<div class="field"><label for="scan-file">Foto o captura</label><input type="file" id="scan-file" accept="image/*"></div>'+
+    '<p id="scan-status" class="sub" role="status" aria-live="polite"></p>'+
+    '<div class="actions"><button type="button" class="btn ghost" data-act="close">Cancelar</button></div>';
+}
+function doScan(file){
+  var st=$('scan-status');
+  var say=function(t){if($('scan-status'))$('scan-status').textContent=t;};
+  say('Preparando la imagen…');
+  var worker=null;
+  prepImg(file).then(function(cv){
+    say('Cargando el lector (la primera vez tarda unos segundos)…');
+    return loadScriptOnce('ocr/tesseract.min.js').then(function(){
+      var base=new URL('ocr/',location.href).href;
+      return window.Tesseract.createWorker('spa',1,{workerPath:base+'worker.min.js',corePath:base+'core/',langPath:base+'lang/',gzip:true,cacheMethod:'none',logger:function(m){if(m&&m.status==='recognizing text')say('Leyendo… '+Math.round((m.progress||0)*100)+' %');}});
+    }).then(function(w){worker=w;return w.recognize(cv);});
+  }).then(function(r){
+    var res=parseTicket((r&&r.data&&r.data.text)||'');
+    return worker.terminate().catch(function(){}).then(function(){return res;});
+  }).then(function(res){
+    if(!S.sheet||S.sheet.id!=='scan')return;
+    S.prefillG={amount:res.amount,note:res.note,cat:res.cat,date:res.date,hint:res.amount?'Leído del ticket. Revisá el monto, la fecha y la categoría antes de guardar.':'No pude leer el monto con claridad. Escribilo vos y revisá lo demás.'};
+    openSheet('new','g');
+  }).catch(function(e){
+    try{if(worker)worker.terminate();}catch(x){}
+    say((e&&e.message)||'No se pudo leer la imagen.');
+    var ss=$('scan-status');if(ss)ss.textContent+=' Podés anotar el gasto a mano.';
+  });
+}
 function gastoForm(g){
   var isNew=!g;
-  var v=g||{amount:'',note:'',cat:'otro',date:todayStr()};
+  var v=g||S.prefillG||{amount:'',note:'',cat:'otro',date:todayStr()};
+  var hint=(!g&&S.prefillG&&S.prefillG.hint)?'<p class="sub" role="status">'+esc(S.prefillG.hint)+'</p>':'';
   var cats=katOpts(v.cat);
   return '<h2 id="sheet-title">'+(isNew?'Nuevo gasto':'Editar gasto')+'</h2>'+
-    '<form id="gform" novalidate>'+
+    hint+'<form id="gform" novalidate>'+
       '<div class="field"><label for="g-amt">Monto ($)</label><input type="text" id="g-amt" inputmode="decimal" autocomplete="off" placeholder="0.00" value="'+(v.amount===''?'':esc(v.amount))+'"></div>'+
       '<div class="field"><label for="g-note">Descripción (opcional)</label><input type="text" id="g-note" maxlength="80" autocomplete="off" placeholder="Ej. café, almuerzo, gasolina" value="'+esc(v.note)+'"></div>'+
       '<div class="two"><div class="field"><label for="g-cat">Categoría</label><select id="g-cat">'+cats+'</select></div>'+
@@ -1273,6 +1361,7 @@ function openSheet(id,kind){
   var body=$('sheet-body');
   if(id==='opts')body.innerHTML=optsHtml();
   else if(id==='plan')body.innerHTML=planHtml();
+  else if(id==='scan')body.innerHTML=scanSheet();
   else if(id==='transf')body.innerHTML=transfForm(kind==='cash');
   else if(id==='presup')body.innerHTML=presupForm();
   else if(id==='pinset')body.innerHTML=pinSetHtml();
@@ -1288,6 +1377,7 @@ function openSheet(id,kind){
   var t=$('sheet-title');if(t){t.tabIndex=-1;t.focus();}
 }
 function closeSheet(){
+  S.prefillG=null;
   $('overlay').hidden=true;S.sheet=null;S.armed=false;
   document.body.style.overflow='';
   if(S.opener&&S.opener.focus&&document.contains(S.opener))S.opener.focus();
@@ -1568,6 +1658,7 @@ document.addEventListener('click',function(e){
   else if(a==='plan')openSheet('plan');
   else if(a==='transf')openSheet('transf');
   else if(a==='cash')openSheet('transf','cash');
+  else if(a==='scan')openSheet('scan');
   else if(a==='presup')openSheet('presup');
   else if(a==='per'){S.per=el.dataset.v;render();}
   else if(a==='tdel')delTransf(el.dataset.id,el);
@@ -1600,6 +1691,7 @@ document.addEventListener('submit',function(e){
 });
 document.addEventListener('change',function(e){
   if(e.target.id==='imp'&&e.target.files&&e.target.files[0])importFile(e.target.files[0]);
+  if(e.target.id==='scan-file'&&e.target.files&&e.target.files[0])doScan(e.target.files[0]);
   if(e.target.id==='c-type')$('c-lim-f').hidden=!isDebt(e.target.value);
   if(e.target.id==='i-rep'){var x=e.target.value==='x';$('i-day-f').hidden=x;$('i-date-f').hidden=!x;}
 });
