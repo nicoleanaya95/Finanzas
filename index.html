@@ -735,15 +735,23 @@ function dayLabel(ds){
 }
 function ajField(fid,sel){
   var pend=(S.ajeno||[]).filter(function(a){return !a.done||a.id===sel;});
-  if(!pend.length)return '';
-  return '<div class="field"><label for="'+fid+'">¿Es con dinero de otra persona?</label><select id="'+fid+'"><option value="">No, es mío</option>'+pend.map(function(a){return '<option value="'+esc(a.id)+'"'+(a.id===sel?' selected':'')+'>'+esc(a.who)+' · '+fmt(a.amount)+(a.note?' · '+esc(a.note):'')+'</option>';}).join('')+'</select></div>';
+  var aps=S.cuentas.filter(function(c){return (c.apart||0)>0||('ap:'+c.id)===sel;});
+  if(!pend.length&&!aps.length)return '';
+  return '<div class="field"><label for="'+fid+'">¿Es con dinero de otra persona?</label><select id="'+fid+'"><option value="">No, es mío</option>'+pend.map(function(a){return '<option value="'+esc(a.id)+'"'+(a.id===sel?' selected':'')+'>'+esc(a.who)+' · '+fmt(a.amount)+(a.note?' · '+esc(a.note):'')+'</option>';}).join('')+aps.map(function(c){return '<option value="ap:'+esc(c.id)+'"'+(('ap:'+c.id)===sel?' selected':'')+'>Apartado en '+esc(c.name)+' · '+fmt(c.apart||0)+(c.apartNote?' · '+esc(c.apartNote):'')+'</option>';}).join('')+'</select></div>';
 }
 function ajRevert(g){
   if(!g||!g.aj)return;
+  if(String(g.aj.id).indexOf('ap:')===0){var ca=S.cuentas.find(function(x){return x.id===g.aj.id.slice(3);});if(ca)ca.apart=r2((ca.apart||0)+g.aj.amount);return;}
   var a=(S.ajeno||[]).find(function(x){return x.id===g.aj.id;});
   if(a){a.amount=r2(a.amount+g.aj.amount);a.done=false;}
 }
 function ajApply(doc,ajId){
+  if(ajId&&ajId.indexOf('ap:')===0){
+    var ca=S.cuentas.find(function(x){return x.id===ajId.slice(3);});
+    if(!ca){doc.aj=null;return;}
+    var u=r2(Math.min(ca.apart||0,doc.amount));ca.apart=r2((ca.apart||0)-u);
+    doc.aj={id:ajId,amount:u};return;
+  }
   var a=ajId?(S.ajeno||[]).find(function(x){return x.id===ajId;}):null;
   if(!a){doc.aj=null;return;}
   var used=r2(Math.min(a.amount,doc.amount));
