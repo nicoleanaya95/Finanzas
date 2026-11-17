@@ -1464,7 +1464,7 @@ function dashHtml(M,I){
   var A=amodel();
   if(A.metas.length){
     var done=A.metas.some(function(o){return o.pct>=100;});
-    h+='<button type="button" class="dcard" data-act="view" data-v="ahorros">'+(done?'<img src="cuchito-feliz.png" width="64" height="64" alt="" style="float:right;margin:-6px -4px 0 8px;object-fit:contain">':'')+'<p class="ttl">'+(done?'¡Meta lograda! 🎉':'Tus metas')+'</p>'+A.metas.slice(0,3).map(function(o){
+    h+='<button type="button" class="dcard" data-act="view" data-v="ahorros">'+(done?'<img src="cuchito-feliz.png" width="72" height="71" alt="" style="float:right;margin:-6px -4px 0 8px;object-fit:contain">':'')+'<p class="ttl">'+(done?'¡Meta lograda! 🎉':'Tus metas')+'</p>'+A.metas.slice(0,3).map(function(o){
       return '<div class="cl"><span>🎯 '+esc(o.m.name)+'</span><b>'+fmt(o.s)+' <span style="font-weight:400;color:var(--ink-2)">de '+fmt(o.m.goal)+'</span></b><i><u style="width:'+o.pct+'%"></u></i></div>';}).join('')+'</button>';
   }
   return h;
