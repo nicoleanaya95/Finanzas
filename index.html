@@ -663,7 +663,7 @@ function quickHtml(){
   var last='';try{last=localStorage.getItem('finanzas-ultima-fuente')||'';}catch(x){}
   return '<h2 id="sheet-title">Anotar gasto</h2><form id="qform" novalidate>'+
     '<div class="field"><label for="q-amt">¿Cuánto fue? ($)</label><input type="text" id="q-amt" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:28px;font-weight:800;height:60px"></div>'+
-    '<div class="field"><label for="q-note">Descripción (opcional)</label><input type="text" id="q-note" maxlength="80" autocomplete="off" placeholder="Ej. Texaco Escalón, almuerzo con Yancy"></div>'+
+    '<div class="field"><label for="q-note">Descripción (opcional)</label><input type="text" id="q-note" maxlength="80" autocomplete="off" placeholder="Ej. Texaco Escalón, almuerzo con Ana"></div>'+
     '<div class="two"><div class="field"><label for="q-date">Fecha</label><input type="date" id="q-date" value="'+todayStr()+'" max="'+todayStr()+'"></div>'+srcField(last,'q-src')+'</div>'+
     '<p class="lbl" style="margin:4px 0 8px">Tocá la categoría para guardar</p>'+
     '<div class="qgrid">'+ks.map(function(k){return '<button type="button" class="qcat" data-act="qcat" data-k="'+k+'"><span class="gi" aria-hidden="true">'+(KEM[k]||'✨')+'</span><span>'+esc(KATS[k])+'</span></button>';}).join('')+'</div>'+
