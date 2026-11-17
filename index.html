@@ -1416,7 +1416,7 @@ function renderIHero(M,I){
     $('hero').innerHTML=navHtml()+
       '<div style="display:flex;align-items:center;gap:12px;margin-top:6px"><div style="flex:1;min-width:0"><p class="eyebrow" style="margin-top:0">'+sal+'</p>'+
       (A.dia>0?'<p class="big">'+fmt(A.dia)+'</p><p class="of">para gastar hoy sin culpa, ≈ cada día hasta tu próximo pago</p>':'<p class="big" style="font-size:30px;line-height:1.1">Vamos con calma</p><p class="of">Primero lo fijo; lo demás lo vemos día a día.</p>')+
-      '</div>'+PIG+'</div>'+
+      '</div>'+PIGI+'</div>'+
       '<div class="nexts"><p class="next" style="font-weight:600">'+AMIGO[i]+'</p></div>';
     return;
   }
@@ -1469,6 +1469,7 @@ function dashHtml(M,I){
   }
   return h;
 }
+var PIGI='<img src="cuchito-inicio.png" width="118" height="92" alt="" style="flex:none;object-fit:contain">';
 var PIG='<img src="cuchito.png" width="96" height="95" alt="" style="flex:none;object-fit:contain">';
 var AMIGO=['Paso a paso, vas bien.','Cada gasto anotado es un paso hacia tu viaje.','Ordenar tu plata también es cuidarte.','Hoy basta con anotar lo de hoy.','Lo difícil ya lo empezaste.','Las deudas se acaban; tu plan ya está en marcha.','Un día a la vez.'];
 function amigoHtml(){
