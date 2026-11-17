@@ -416,7 +416,7 @@ function load(){
       (sd.adjust||[]).forEach(function(j){
         if(adone[j.id])return;
         var c=(cur.cuentas||[]).find(function(x){return x.id===j.cuenta;});
-        if(c&&j.setApart!==undefined){c.apart=j.setApart;if(j.apartNote)c.apartNote=j.apartNote;}
+        if(c&&j.setApart!==undefined){c.apart=j.setApart;if(j.apartNote!==undefined)c.apartNote=j.apartNote;}
         else if(c){c.saldo=Math.round((Number(c.saldo)+j.delta)*100)/100;c.upd=j.fecha||c.upd;}
         adone[j.id]=1;
       });
