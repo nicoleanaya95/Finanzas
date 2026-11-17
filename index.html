@@ -902,9 +902,8 @@ function renderAHero(A){
     '<div class="split"><div><span>Apartado en '+MONTHS[S.m]+'</span><b>'+fmt(A.mes)+'</b></div><div><span>Para llegar a tus metas</span><b>'+(A.sugerido>0?fmt(A.sugerido)+'/mes':'—')+'</b></div></div>';
 }
 function metaIcon(n){
-  if(/viaje|concierto|vacaci|guate|paseo/i.test(n))return '<img src="cuchito-viaje.png" width="40" height="32" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">';
-  var e=/llanta|aceite|carro|mantenimiento/i.test(n)?'🚗':/totto|vacuna|vet|mascota/i.test(n)?'🐶':/emergencia/i.test(n)?'🛟':'';
-  return e?'<span aria-hidden="true" style="margin-right:6px">'+e+'</span>':'';
+  var f=/viaje|concierto|vacaci|guate|paseo/i.test(n)?'viaje':/llanta|aceite|carro|mantenimiento/i.test(n)?'carro':/totto|vacuna|vet|mascota/i.test(n)?'mascota':/emergencia/i.test(n)?'emergencia':'generica';
+  return '<img src="cuchito-'+f+'.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">';
 }
 function renderAMain(A){
   var el=$('main');
