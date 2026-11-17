@@ -267,6 +267,19 @@ details.more[open]>summary{margin-bottom:12px}
 :root[data-theme="dark"] .gi{background:radial-gradient(circle at 35% 28%,#4A3541 0%,var(--surface-2) 75%);box-shadow:inset 0 -2px 4px rgba(0,0,0,.2)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{background:linear-gradient(160deg,#47303C 0%,var(--hero) 60%,#33212B 100%)}:root:not([data-theme="light"]) .gi{background:radial-gradient(circle at 35% 28%,#4A3541 0%,var(--surface-2) 75%)}}
 .empty[style*="--nopig"]::before{display:none}
+.meta-card{padding:18px;gap:0}
+.mc-head{display:flex;align-items:center;gap:14px}
+.mc-ico{width:62px;height:62px;border-radius:20px;background:var(--hero);display:grid;place-items:center;flex:none;overflow:hidden}
+.mc-t{flex:1;min-width:0;display:grid;gap:7px}
+.mc-t .name{font-size:17px;font-weight:700;line-height:1.2;display:block}
+.mc-chips{display:flex;flex-wrap:wrap;gap:6px}
+.mc-chips .chip{font-size:12px}
+.mc-amt{text-align:right;display:grid;gap:2px;flex:none}
+.mc-amt b{font-size:20px;font-variant-numeric:tabular-nums}
+.mc-amt small{font-size:12px;color:var(--ink-2)}
+.meta-card .bar{margin-top:16px;height:10px}
+.meta-card .sub2{margin-top:10px}
+.metas{display:grid;gap:14px}
 </style>
 </head>
 <body>
@@ -902,7 +915,7 @@ function renderAHero(A){
     '<div class="split"><div><span>Apartado en '+MONTHS[S.m]+'</span><b>'+fmt(A.mes)+'</b></div><div><span>Para llegar a tus metas</span><b>'+(A.sugerido>0?fmt(A.sugerido)+'/mes':'—')+'</b></div></div>';
 }
 function metaIcon(n){
-  var I={viaje:'<img src="cuchito-viaje.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">',carro:'<img src="cuchito-carro.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">',mascota:'<img src="cuchito-mascota.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">',emergencia:'<img src="cuchito-emergencia.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">',generica:'<img src="cuchito-generica.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">'};
+  var I={viaje:'<img src="cuchito-viaje.png" width="54" height="40" alt="" style="object-fit:contain">',carro:'<img src="cuchito-carro.png" width="54" height="40" alt="" style="object-fit:contain">',mascota:'<img src="cuchito-mascota.png" width="54" height="40" alt="" style="object-fit:contain">',emergencia:'<img src="cuchito-emergencia.png" width="54" height="40" alt="" style="object-fit:contain">',generica:'<img src="cuchito-generica.png" width="54" height="40" alt="" style="object-fit:contain">'};
   var f=/viaje|concierto|vacaci|guate|paseo/i.test(n)?'viaje':/llanta|aceite|carro|mantenimiento/i.test(n)?'carro':/totto|vacuna|vet|mascota/i.test(n)?'mascota':/emergencia/i.test(n)?'emergencia':'generica';
   return I[f];
 }
@@ -915,15 +928,17 @@ function renderAMain(A){
   el.innerHTML='<div class="metas">'+A.metas.map(function(x){
     var m=x.m,sub;
     if(m.goal>0&&x.falta<=0)sub='<span class="chip ok">Meta cumplida</span>';
-    else if(x.vencida)sub='<span class="chip late">Pasó la fecha · faltan '+fmt(x.falta)+'</span>';
+    else if(x.vencida)sub='<span style="color:var(--late)">Pasó la fecha · faltan '+fmt(x.falta)+'</span>';
     else if(x.porMes)sub='<span>Aparta '+fmt(x.porMes)+' al mes</span>';
     else sub='<span>'+(m.goal>0?'Faltan '+fmt(x.falta):'Sin monto meta')+'</span>';
     var by=m.by?(function(){var p=m.by.split('-');return MON[+p[1]-1]+' '+p[0];})():'';
     var cta=S.cuentas.find(function(c){return c.id===m.cuenta;});
-    return '<button type="button" class="meta-card'+(m.goal>0&&x.falta<=0?' done':'')+'" data-act="aopen" data-id="'+esc(m.id)+'">'+
-      '<span class="top2"><span class="name">'+metaIcon(m.name)+esc(m.name)+(cta?' <span class="chip">'+esc(cta.name)+'</span>':'')+'</span><span class="amt">'+fmt(x.s)+'</span></span>'+
+    var chips=(cta?'<span class="chip">'+esc(cta.name)+'</span>':'')+(by?'<span class="chip'+(x.vencida?' late':'')+'">Para '+by+'</span>':'');
+    var done=m.goal>0&&x.falta<=0;
+    return '<button type="button" class="meta-card'+(done?' done':'')+'" data-act="aopen" data-id="'+esc(m.id)+'">'+
+      '<span class="mc-head"><span class="mc-ico">'+metaIcon(m.name)+'</span><span class="mc-t"><span class="name">'+esc(m.name)+'</span>'+(chips?'<span class="mc-chips">'+chips+'</span>':'')+'</span><span class="mc-amt"><b>'+fmt(x.s)+'</b>'+(m.goal>0?'<small>de '+fmt(m.goal)+'</small>':'')+'</span></span>'+
       (m.goal>0?'<span class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+x.pct+'" aria-label="Avance de '+esc(m.name)+'"><i style="width:'+x.pct+'%"></i></span>':'')+
-      '<span class="sub2">'+sub+'<span>'+(m.goal>0?x.pct+'% de '+fmt(m.goal):'')+(by?' · '+by:'')+'</span></span>'+
+      '<span class="sub2">'+sub+'<span>'+(m.goal>0?x.pct+' %':'')+'</span></span>'+
     '</button>';
   }).join('')+'</div>';
 }
