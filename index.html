@@ -1623,7 +1623,7 @@ function renderDeudas(){
     h+='<button type="button" class="meta-card" data-act="plan" style="margin-top:20px"><span class="top2"><span class="name">Plan para salir de deudas</span><span class="amt">'+(pl&&!pl.stuck?mesTxt(pl.meses):'—')+'</span></span><span class="sub2"><span>'+(pl&&!pl.stuck?'Libre de deudas en '+durTxt(pl.meses):'Revisa cuotas y tasas')+'</span><span>Ver plan</span></span></button>';
     if(pl&&!pl.stuck){var b0=pl;h+=ahorroSim(D,S.plan,b0);}
     h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que debo · '+fmt(C.deudas)+'</p><ul class="list">'+C.deu.map(cRow).join('')+'</ul>';
-  }else h+='<div class="empty" style="--nopig:1"><img src="cuchito-pagada.png" width="120" height="99" alt="" style="display:block;margin:0 auto 6px"><h3>Sin deudas registradas</h3><p>Cuando agregues tarjetas o préstamos en Cuentas, aparecen aquí.</p></div>';
+  }else h+='<div class="empty" style="--nopig:1"><img src="cuchito-pagada.png" width="120" height="97" alt="" style="display:block;margin:0 auto 6px"><h3>Sin deudas registradas</h3><p>Cuando agregues tarjetas o préstamos en Cuentas, aparecen aquí.</p></div>';
   h+='<div class="actions" style="margin-top:16px"><button type="button" class="btn primary" data-act="vlock">Bloquear y volver</button></div>';
   $('main').innerHTML=h;
 }
