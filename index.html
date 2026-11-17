@@ -569,7 +569,7 @@ function todayStr(){return ymd(new Date());}
 function normG(id,d){
   d=d||{};
   var date=/^\d{4}-\d{2}-\d{2}$/.test(String(d.date))?String(d.date):todayStr();
-  var cat=d.cat==='cafe'?'comida':d.cat; // café ahora va dentro de comidas fuera
+  var cat=d.cat;
   return {id:String(id),amount:Number(d.amount)||0,note:String(d.note||''),cat:KATS[cat]?cat:'otro',date:date,t:Number(d.t)||0,fuente:String(d.fuente||''),ap:(d.ap&&d.ap.cuenta)?{cuenta:String(d.ap.cuenta),amount:Number(d.ap.amount)||0}:null};
 }
 var PERS={mes:'Mes',sem:'Semana',q1:'1–15',q2:'16–fin'};
@@ -786,7 +786,7 @@ function parseTicket(text){
   return {amount:amount?r2(amount):'',date:date,note:merch,cat:cat};
 }
 function scanSheet(){
-  return '<h2 id="sheet-title">Escanear ticket</h2><p class="sub">Tomá una foto del ticket o elegí una captura. La lectura se hace en tu teléfono: la imagen no sale de él. Siempre vas a poder revisar los datos antes de guardar.</p>'+
+  return '<img src="cuchito-escaneo.png" width="92" height="85" alt="" style="float:right;margin:-4px 0 4px 8px;object-fit:contain"><h2 id="sheet-title">Escanear ticket</h2><p class="sub">Tomá una foto del ticket o elegí una captura. La lectura se hace en tu teléfono: la imagen no sale de él. Siempre vas a poder revisar los datos antes de guardar.</p>'+
     '<div class="field"><label for="scan-file">Foto o captura</label><input type="file" id="scan-file" accept="image/*"></div>'+
     '<p id="scan-status" class="sub" role="status" aria-live="polite"></p>'+
     '<div class="actions"><button type="button" class="btn ghost" data-act="close">Cancelar</button></div>';
