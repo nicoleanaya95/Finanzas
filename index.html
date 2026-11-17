@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Mis finanzas</title>
-<meta name="theme-color" content="#1C7C6B">
+<meta name="theme-color" content="#FFF8F4">
 <meta name="robots" content="noindex,nofollow">
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
@@ -15,24 +15,24 @@
 :root{
   --font-display:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;
   --font-body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --bg:#F2F5F2;
+  --bg:#FFF8F4;
   --surface:#FFFFFF;
-  --surface-2:#E7EEEA;
-  --ink:#14302A;
-  --ink-2:#4A5F59;
-  --line:#DCE4DF;
-  --accent:#1C7C6B;
+  --surface-2:#FBEBE6;
+  --ink:#3B2330;
+  --ink-2:#7A5A66;
+  --line:#F1DCD6;
+  --accent:#2B8470;
   --on-accent:#FFFFFF;
-  --accent-soft:#D5EEE5;
-  --hero:#D5EEE5;
+  --accent-soft:#DDF1EA;
+  --hero:#FCE2DE;
   --hero-btn:rgba(255,255,255,.62);
-  --hero-line:rgba(20,48,42,.14);
-  --track:rgba(20,48,42,.13);
+  --hero-line:rgba(59,35,48,.12);
+  --track:rgba(59,35,48,.10);
   --warn:#7F4A00;
   --warn-soft:#FBEBCF;
   --late:#A8332A;
   --late-soft:#F9DEDA;
-  --shadow:0 1px 2px rgba(20,48,42,.06),0 8px 24px rgba(20,48,42,.07);
+  --shadow:0 1px 2px rgba(120,60,70,.06),0 8px 24px rgba(120,60,70,.08);
   --scrim:rgba(10,24,20,.5);
 }
 @media (prefers-color-scheme:dark){
@@ -72,7 +72,7 @@ button{cursor:pointer}
 .mnav h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:18px;text-transform:capitalize}
 .mnav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--hero-btn);display:grid;place-items:center}
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);margin:16px 0 0}
-.big{font-family:var(--font-display);font-weight:700;font-size:clamp(44px,14vw,60px);line-height:1.02;letter-spacing:-.025em;margin:2px 0 0;font-variant-numeric:tabular-nums}
+.big{font-family:var(--font-display);font-weight:700;font-size:clamp(40px,12vw,52px);line-height:1.02;letter-spacing:-.025em;margin:2px 0 0;font-variant-numeric:tabular-nums}
 .of{color:var(--ink-2);margin:4px 0 0;font-size:15px}
 .bar{height:10px;border-radius:999px;background:var(--track);margin-top:16px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .4s ease}
@@ -1297,11 +1297,11 @@ function renderIHero(M,I){
   var line=function(l,v,neg){return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:15px;padding:3px 0"><span style="color:var(--ink-2)">'+l+'</span><b style="font-variant-numeric:tabular-nums">'+(neg?'−':'')+fmt(v)+'</b></div>';};
   $('hero').innerHTML=navHtml()+
     '<p class="eyebrow">'+(I.queda<0?'Te faltan este mes':'Te queda este mes')+'</p>'+
-    '<p class="big"'+(I.queda<0?' style="color:var(--late)"':'')+'>'+fmt(Math.abs(I.queda))+'</p>'+
+    '<p class="big">'+fmt(Math.abs(I.queda))+'</p>'+
     '<p class="of">'+(S.ingresos.length||I.extras.length?'Ingresos menos pagos, gastos y ahorro':'Agrega tus ingresos para ver cuánto te queda')+'</p>'+
     '<div class="split" style="display:block">'+
       line('Ingresos del mes',I.esperado)+line('Pagos fijos',M.bolsa,true)+line('Gastos de tu bolsa',I.gastos,true)+line('Apartado para ahorro',I.ahorro,true)+
-    '</div>'+(M.planilla>0?'<div class="nexts"><p class="next">'+fmt(M.planilla)+' de descuentos de planilla no se restan aquí porque ya vienen descontados de tu salario.</p></div>':'')+(I.tarjeta>0?'<div class="nexts"><p class="next">Además cargaste <b>'+fmt(I.tarjeta)+'</b> a tarjetas. No resta aquí porque lo pagas cuando pagas la tarjeta.</p></div>':'');
+    '</div>'+((M.planilla>0||I.tarjeta>0)?'<details style="margin-top:10px"><summary style="font-size:13px;color:var(--ink-2);cursor:pointer;min-height:32px;display:flex;align-items:center">¿Cómo se calcula?</summary>'+(M.planilla>0?'<div class="nexts"><p class="next">'+fmt(M.planilla)+' de descuentos de planilla no se restan aquí porque ya vienen descontados de tu salario.</p></div>':'')+(I.tarjeta>0?'<div class="nexts"><p class="next">Además cargaste <b>'+fmt(I.tarjeta)+'</b> a tarjetas. No resta aquí porque lo pagas cuando pagas la tarjeta.</p></div>':'')+'</details>':'');
 }
 function ringSvg(pct,color,txt,sub){
   var p=Math.max(0,Math.min(100,pct));
