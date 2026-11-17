@@ -1234,7 +1234,7 @@ function dueBanner(M){
   var it=M.all.filter(function(x){return !x.paid&&(x.due===t||x.due===t+1);});
   if(!it.length)return '';
   var tot=r2(it.reduce(function(s,x){return s+x.amt;},0));
-  return '<button type="button" class="dcard" data-act="view" data-v="fijos" style="display:flex;align-items:center;gap:12px;margin-top:14px"><span style="font-size:24px" aria-hidden="true">⏰</span><span><b>Pagos de hoy y mañana · '+fmt(tot)+'</b><br><span class="note" style="margin:0">'+it.map(function(x){return esc(x.p.name);}).slice(0,4).join(', ')+'</span></span></button>';
+  return '<button type="button" class="dcard" data-act="view" data-v="fijos" style="display:flex;align-items:center;gap:12px;margin-top:14px"><img src="cuchito-recordatorio.png" width="56" height="52" alt="" style="flex:none;object-fit:contain"><span><b>Pagos de hoy y mañana · '+fmt(tot)+'</b><br><span class="note" style="margin:0">'+it.map(function(x){return esc(x.p.name);}).slice(0,4).join(', ')+'</span></span></button>';
 }
 function ahorroSim(D,P,base){
   var rows=[25,50,100].map(function(x){
