@@ -416,7 +416,8 @@ function load(){
       (sd.adjust||[]).forEach(function(j){
         if(adone[j.id])return;
         var c=(cur.cuentas||[]).find(function(x){return x.id===j.cuenta;});
-        if(c){c.saldo=Math.round((Number(c.saldo)+j.delta)*100)/100;c.upd=j.fecha||c.upd;}
+        if(c&&j.setApart!==undefined){c.apart=j.setApart;if(j.apartNote)c.apartNote=j.apartNote;}
+        else if(c){c.saldo=Math.round((Number(c.saldo)+j.delta)*100)/100;c.upd=j.fecha||c.upd;}
         adone[j.id]=1;
       });
       var rc=sd.reconcile,rcDo=rc&&!adone[rc.id];
@@ -1117,6 +1118,7 @@ function renderCMain(C){
   }
   var h='';
   if(C.act.length)h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que tengo · '+fmt(C.activos)+'</p><ul class="list">'+C.act.map(cRow).join('')+'</ul>';
+  h+=ajenoHtml();
   h+='<button type="button" class="dcard" data-act="view" data-v="deudas" style="display:flex;align-items:center;gap:12px"><span style="font-size:26px" aria-hidden="true">🔒</span><span><b style="font-size:17px">Mis deudas</b><br><span class="note" style="margin:0">Aparte y con PIN, para verlas cuando vos quieras.</span></span></button>';
   h+='<div class="actions" style="margin-top:16px"><button type="button" class="btn primary" data-act="cash">Sacar efectivo</button><button type="button" class="btn ghost" data-act="transf">Mover entre cuentas</button></div>';
   var tl=S.transf.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:b.t-a.t;}).slice(0,10);
