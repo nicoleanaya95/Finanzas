@@ -1567,7 +1567,7 @@ function vaultCfg(){try{return JSON.parse(localStorage.getItem(VKEY)||'null');}c
 function vaultForm(cfg){
   return '<form id="dvform" novalidate style="margin-top:12px"><img src="cuchito-candado.png" width="120" height="123" alt="" style="display:block;margin:0 auto 8px">'+
     (cfg?'<div class="field"><label for="v-pin">PIN de deudas</label><input type="password" id="v-pin" inputmode="numeric" maxlength="6" autocomplete="off"></div>'
-        :'<p class="sub">Este PIN es solo para ver tus deudas. No es el de la app y no cifra tus datos: sirve para que no queden a la vista.</p><div class="two"><div class="field"><label for="v-new">PIN nuevo (4 a 6 números)</label><input type="password" id="v-new" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="field"><label for="v-rep">Repetilo</label><input type="password" id="v-rep" inputmode="numeric" maxlength="6" autocomplete="off"></div></div>')+
+        :'<p class="sub">Este PIN es solo para ver tus deudas. No es el de la app y no cifra tus datos: sirve para que no queden a la vista.</p><div style="display:block"><div class="field"><label for="v-new">PIN nuevo (4 a 6 números)</label><input type="password" id="v-new" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="field"><label for="v-rep">Repetilo</label><input type="password" id="v-rep" inputmode="numeric" maxlength="6" autocomplete="off"></div></div>')+
     '<p class="err" id="v-err" role="alert" hidden></p>'+
     '<div class="actions"><button type="submit" class="btn primary">'+(cfg?'Abrir':'Guardar PIN y abrir')+'</button><button type="button" class="btn ghost" data-act="view" data-v="cuentas">Volver</button></div></form>';
 }
