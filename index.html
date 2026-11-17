@@ -308,13 +308,13 @@ var r2=function(n){return Math.round(n*100)/100;};
 var dim=function(y,m){return new Date(y,m+1,0).getDate();};
 var mkey=function(y,m){return y+'-'+pad(m+1);};
 var nowD=new Date();
-var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos:[],extras:[],cobros:[],transf:[],presup:{},reglas:{},per:'mes',plan:{extra:0,metodo:'tasa',unico:0,unicoMes:''},view:'inicio',filter:'todos',y:nowD.getFullYear(),m:nowD.getMonth(),sheet:null,armed:false,opener:null,pin:null,key:null,locked:false,hiddenAt:0,kfilter:''};
+var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos:[],extras:[],cobros:[],transf:[],presup:{},reglas:{},ajeno:[],per:'mes',plan:{extra:0,metodo:'tasa',unico:0,unicoMes:''},view:'inicio',filter:'todos',y:nowD.getFullYear(),m:nowD.getMonth(),sheet:null,armed:false,opener:null,pin:null,key:null,locked:false,hiddenAt:0,kfilter:''};
 
 /* ---------- almacenamiento local (solo en este teléfono) ----------
    Sin PIN: se guarda tal cual. Con PIN: se guarda cifrado (AES-GCM, clave derivada del PIN con PBKDF2). */
 var KEY='finanzas-app-v1',PINKEY='finanzas-app-pin';
 var enc=new TextEncoder(),dec=new TextDecoder();
-function snapshot(){return {version:3,pagos:S.pagos,meses:S.meses,gastos:S.gastos,metas:S.metas,movs:S.movs,cuentas:S.cuentas,snaps:S.snaps,ingresos:S.ingresos,extras:S.extras,cobros:S.cobros,transf:S.transf,presup:S.presup,reglas:S.reglas,plan:S.plan};}
+function snapshot(){return {version:3,pagos:S.pagos,meses:S.meses,gastos:S.gastos,metas:S.metas,movs:S.movs,cuentas:S.cuentas,snaps:S.snaps,ingresos:S.ingresos,extras:S.extras,cobros:S.cobros,transf:S.transf,presup:S.presup,reglas:S.reglas,ajeno:S.ajeno,plan:S.plan};}
 function b64(buf){var s='',a=new Uint8Array(buf);for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s);}
 function unb64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
 function deriveKey(pin,salt){
@@ -350,6 +350,7 @@ function apply(j){
   S.transf=(j.transf||[]).map(function(t){return normT(t.id,t);});
   S.plan=normPlan(j.plan);
   if(!S.cuentas.some(function(c){return c.type==='efectivo';}))S.cuentas.unshift(normC('c_efectivo',{name:'Efectivo',type:'efectivo',saldo:0,o:0,upd:ymd(new Date())}));
+  S.ajeno=(j.ajeno||[]).map(function(a){return normA(a.id,a);});
   S.reglas={};var rg=j.reglas||{};Object.keys(rg).forEach(function(k){if(KATS[rg[k]]&&k&&k.length<=40)S.reglas[k]=rg[k];});
   S.presup={};var pr=j.presup||{};Object.keys(pr).forEach(function(k){var v=Number(pr[k]);if(KATS[k]&&v>0)S.presup[k]=v;});
 }
@@ -367,7 +368,7 @@ function load(){
     var sv=0;try{sv=+localStorage.getItem('finanzas-seed-v')||0;}catch(e){}
     if(sv<(window.SEED.v||1)){
       var cur=snapshot(),sd=window.SEED;
-      ['pagos','gastos','metas','movs','cuentas','snaps','ingresos','extras','cobros','transf'].forEach(function(k){
+      ['pagos','gastos','metas','movs','cuentas','snaps','ingresos','extras','cobros','transf','ajeno'].forEach(function(k){
         var force={};(sd.force||[]).forEach(function(i){force[i]=1;});
         cur[k]=(cur[k]||[]).filter(function(x){return !force[x.id];});
         var have={};(cur[k]||[]).forEach(function(x){have[x.id]=1;});
@@ -1301,6 +1302,19 @@ function normI(id,d){
   d=d||{};var day=parseInt(d.day,10);
   return {id:String(id),name:String(d.name||'Ingreso'),day:(day>=1&&day<=31)?day:1,amount:Number(d.amount)||0,o:Number(d.o)||0};
 }
+function normA(id,d){
+  d=d||{};
+  return {id:String(id),who:String(d.who||'Otra persona').slice(0,50),note:String(d.note||'').slice(0,80),amount:Math.max(0,Number(d.amount)||0),date:/^\d{4}-\d{2}-\d{2}$/.test(String(d.date))?String(d.date):todayStr(),done:!!d.done,t:Number(d.t)||0};
+}
+function heldSum(){return r2((S.ajeno||[]).reduce(function(s,a){return a.done?s:s+a.amount;},0));}
+function ajenoHtml(){
+  var A=S.ajeno||[];if(!A.length)return '';
+  var pen=A.filter(function(a){return !a.done;}),don=A.filter(function(a){return a.done;});
+  var row=function(a){return '<li class="row'+(a.done?' is-paid':'')+'"><div class="row-main" style="cursor:default"><span class="gi" aria-hidden="true">🤝</span><span class="info"><span class="name">'+esc(a.who)+'</span><span class="meta1">'+(a.note?esc(a.note)+' · ':'')+'desde '+esc(a.date.slice(8)+'/'+a.date.slice(5,7))+'</span></span><span class="amt">'+fmt(a.amount)+'</span></div><button type="button" class="check" data-act="ajtoggle" data-id="'+esc(a.id)+'" aria-pressed="'+a.done+'" aria-label="'+(a.done?'Volver a marcar como pendiente: ':'Marcar como entregado: ')+esc(a.who)+'">'+ICON.check+'</button></li>';};
+  return '<p class="eyebrow" style="margin:20px 8px 8px">Dinero de otras personas · '+fmt(heldSum())+'</p>'+
+    (pen.length?'<ul class="list">'+pen.map(row).join('')+'</ul><p class="note" style="margin:6px 8px 0">No cuenta como tuyo: ya está restado de tu Disponible. Tocá el círculo cuando lo entregues o lo pagués.</p>':'<p class="note" style="margin:0 8px">Nada pendiente de entregar.</p>')+
+    (don.length?'<details style="margin-top:8px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center;padding:0 8px">Ya entregado ('+don.length+')</summary><ul class="list">'+don.map(row).join('')+'</ul></details>':'');
+}
 function normX(id,d){
   d=d||{};
   return {id:String(id),name:String(d.name||'Ingreso extra'),amount:Number(d.amount)||0,date:/^\d{4}-\d{2}-\d{2}$/.test(String(d.date))?String(d.date):todayStr(),t:Number(d.t)||0};
@@ -1376,6 +1390,7 @@ function imodel(M){
 function availCalc(M){
   var today=M.t.d,last=dim(S.y,S.m),disp=0,hasD=false;
   S.cuentas.forEach(function(c){var lib=c.saldo-(c.apart||0);if(c.type==='efectivo'||c.type==='ahorro'||c.type==='corriente'||c.type==='digital'){disp+=lib;hasD=true;}});
+  disp-=heldSum();
   var ds=S.ingresos.map(function(i){return Math.min(i.day,last);}).filter(function(d){return d>today;}).sort(function(a,b){return a-b;});
   var endD=ds.length?ds[0]:last+1;
   var bills=r2(M.all.reduce(function(sm,it){return(!it.paid&&!it.p.planilla&&it.due>=today&&it.due<endD)?sm+it.amt:sm;},0));
@@ -1415,6 +1430,7 @@ function dashHtml(M,I){
   var h='',today=M.t.d,last=dim(S.y,S.m);
   var disp=0,efv=0,hasD=false,apart=0;
   S.cuentas.forEach(function(c){var ap=c.apart||0,lib=c.saldo-ap;if(c.type==='efectivo'){efv+=lib;disp+=lib;hasD=true;apart+=ap;}else if(c.type==='ahorro'||c.type==='corriente'||c.type==='digital'){disp+=lib;hasD=true;apart+=ap;}});
+  var held=heldSum();disp-=held;
   /* 1. disponible */
   if(hasD){
     var extra='';
@@ -1427,7 +1443,7 @@ function dashHtml(M,I){
         '<div class="mini"><span>'+(libre>=0?'Libre para '+nd+(nd===1?' día':' días'):'Te faltarían')+'</span><b style="'+(libre<0?'color:var(--late)':'')+'">'+fmt(Math.abs(libre))+'</b></div></div>'+
         '<p class="note">'+(disp===0&&bills===0?'':libre>0?'≈ <b>'+fmt(r2(libre/nd))+'</b> al día para todo lo que no sea un pago fijo. Tomá esto como guía, no como regla.':'Va a estar justo. Primero lo fijo, nada de tarjeta, y si no alcanza lo hablamos.')+'</p>';
     }
-    h+='<button type="button" class="dcard" data-act="view" data-v="cuentas"><p class="ttl">Disponible ahora</p><p class="num">'+fmt(r2(disp))+'</p><p class="note" style="margin-top:4px">Lo tuyo en bancos y efectivo (efectivo '+fmt(r2(efv))+')'+(apart>0?' · apartado '+fmt(r2(apart)):'')+'</p>'+extra+'</button>';
+    h+='<button type="button" class="dcard" data-act="view" data-v="cuentas"><p class="ttl">Disponible ahora</p><p class="num">'+fmt(r2(disp))+'</p><p class="note" style="margin-top:4px">Lo tuyo en bancos y efectivo (efectivo '+fmt(r2(efv))+')'+(apart>0?' · apartado '+fmt(r2(apart)):'')+(held>0?' · de otras personas '+fmt(held)+' ya restado':'')+'</p>'+extra+'</button>';
   }
   /* 2. presupuesto del mes */
   var G=gmodel(M,'mes'),bud=0;
@@ -1469,6 +1485,7 @@ function renderIMain(M,I){
     var prox=M.all.filter(function(it){return !it.paid&&it.due>=M.t.d;}).slice(0,3);
     if(prox.length)h+='<p class="eyebrow" style="margin:20px 8px 8px">Próximos pagos</p><ul class="list">'+prox.map(function(it){return rowHtml(it,M);}).join('')+'</ul>';
   }
+  h+=ajenoHtml();
   var hm=h;h='';
   // ingresos
   h+='<p class="eyebrow" style="margin:20px 8px 8px">Ingresos de '+MONTHS[S.m]+' · recibido '+fmt(I.recibido)+'</p>';
@@ -1492,7 +1509,8 @@ function ingresoForm(kind,o){
   return '<h2 id="sheet-title">'+(isNew?'Nuevo ingreso':'Editar ingreso')+'</h2>'+
     '<form id="iform" novalidate>'+
       '<div class="field"><label for="i-name">Nombre</label><input type="text" id="i-name" maxlength="50" autocomplete="off" placeholder="Ej. Salario quincena, Venta, Bono" value="'+esc(v.name)+'"></div>'+
-      (isNew?'<div class="field"><label for="i-rep">Se repite</label><select id="i-rep"><option value="m">Cada mes</option><option value="x">Solo una vez</option></select></div>':'')+
+      (isNew?'<div class="field"><label for="i-rep">Se repite</label><select id="i-rep"><option value="m">Cada mes</option><option value="x">Solo una vez</option><option value="a">Dinero de otra persona (no es mío)</option></select></div>':'')+
+      '<div class="field" id="i-note-f" hidden><label for="i-note">¿Para qué es? (opcional)</label><input type="text" id="i-note" maxlength="80" autocomplete="off" placeholder="Ej. pagar la U, guardárselo"></div>'+
       '<div class="two"><div class="field"><label for="i-amt">Monto ($)</label><input type="text" id="i-amt" inputmode="decimal" autocomplete="off" value="'+(v.amount===''?'':esc(v.amount))+'"></div>'+
       '<div class="field" id="i-day-f"'+(rec?'':' hidden')+'><label for="i-day">Día del mes</label><input type="text" id="i-day" inputmode="numeric" maxlength="2" autocomplete="off" value="'+esc(v.day||'')+'"></div>'+
       '<div class="field" id="i-date-f"'+(rec?' hidden':'')+'><label for="i-date">Fecha</label><input type="date" id="i-date" value="'+esc(v.date||todayStr())+'"></div></div>'+
@@ -1510,6 +1528,12 @@ function submitIngreso(e){
   var name=$('i-name').value.trim(),amt=num($('i-amt').value);
   if(!name)return fail('Ponle nombre al ingreso.','i-name');
   if(!(amt>0))return fail('Escribe el monto con números, por ejemplo 650.','i-amt');
+  if(S.sheet.id==='new'&&$('i-rep').value==='a'){
+    var ad=$('i-date').value;
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(ad))return fail('Elige la fecha.','i-date');
+    S.ajeno=(S.ajeno||[]).concat([normA(newId('aj'),{who:name,note:$('i-note').value.trim(),amount:r2(amt),date:ad,done:false,t:Date.now()})]);
+    persist();closeSheet();render();toast('Guardado aparte: no cuenta como tuyo');return;
+  }
   var kind=S.sheet.id==='new'?($('i-rep').value==='x'?'x':'i'):S.sheet.kind;
   var id=S.sheet.id==='new'?newId(kind):S.sheet.id;
   if(kind==='i'){
@@ -1940,6 +1964,7 @@ document.addEventListener('click',function(e){
   if(a==='prev'){S.m--;if(S.m<0){S.m=11;S.y--;}render();}
   else if(a==='next'){S.m++;if(S.m>11){S.m=0;S.y++;}render();}
   else if(a==='filter'){S.filter=el.dataset.v;render();}
+  else if(a==='ajtoggle'){var ax=(S.ajeno||[]).find(function(x){return x.id===el.dataset.id;});if(ax){ax.done=!ax.done;persist();render();toast(ax.done?'Marcado como entregado':'Vuelve a pendiente');}}
   else if(a==='kfilter'){S.kfilter=S.kfilter===el.dataset.v?'':el.dataset.v;render();}
   else if(a==='toggle')togglePaid(el.dataset.id);
   else if(a==='open')openSheet(el.dataset.id);
@@ -2008,7 +2033,7 @@ document.addEventListener('change',function(e){
   if(e.target.id==='imp'&&e.target.files&&e.target.files[0])importFile(e.target.files[0]);
   if(e.target.id==='scan-file'&&e.target.files&&e.target.files[0])doScan(e.target.files[0]);
   if(e.target.id==='c-type'){$('c-lim-f').hidden=!isDebt(e.target.value);if($('c-ap-f'))$('c-ap-f').hidden=isDebt(e.target.value);}
-  if(e.target.id==='i-rep'){var x=e.target.value==='x';$('i-day-f').hidden=x;$('i-date-f').hidden=!x;}
+  if(e.target.id==='i-rep'){var rv=e.target.value,x=rv!=='m';$('i-day-f').hidden=x;$('i-date-f').hidden=!x;$('i-note-f').hidden=rv!=='a';var nl=document.querySelector('label[for="i-name"]');if(nl)nl.textContent=rv==='a'?'¿De quién es?':'Nombre';}
 });
 document.addEventListener('keydown',function(e){
   if(S.locked){if(/^\d$/.test(e.key))pinKey(e.key);else if(e.key==='Backspace')pinKey('b');return;}
