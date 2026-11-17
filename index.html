@@ -222,6 +222,11 @@ body{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 .dcard .cl i u{display:block;height:100%;border-radius:6px;background:var(--accent)}
 .dcard .stack{display:flex;height:12px;border-radius:12px;overflow:hidden;background:var(--track);margin:8px 0 6px}
 .empty::before{content:"";display:block;width:150px;height:100px;margin:0 auto 6px;background:url(cuchito-dormido.png) center/contain no-repeat}
+.gi{width:44px;height:44px;border-radius:14px;background:var(--surface-2);display:grid;place-items:center;font-size:22px;flex:none}
+.grow.gr{grid-template-columns:auto minmax(0,1fr) auto;padding:10px 14px}
+.grow.gr .name{font-weight:700;font-size:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow.gr .meta1{font-size:13px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.grow.gr .amt{font-family:var(--font-display);font-weight:800;font-size:17px;font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -557,8 +562,8 @@ function renderGHero(G){
     '<p class="eyebrow">Gastado en '+lbl+'</p>'+
     '<p class="big">'+fmt(G.total)+'</p>'+
     '<p class="of">'+(G.n?G.n+(G.n===1?' gasto':' gastos'):'Sin gastos todavía')+(G.tarjeta>0?' · '+fmt(G.tarjeta)+' con tarjeta':'')+(G.cur&&G.today>0&&per==='mes'?' · hoy '+fmt(G.today):'')+'</p>'+
-    (per==='sem'?semBlock(G,line):'<div class="split" style="display:block">'+line('Ingresos',B.ing)+line('Pagos fijos de tu bolsa',B.fijos,true)+line('Gastos de tu bolsa',B.gastos,true)+(B.ahorro?line('Apartado para ahorro',B.ahorro,true):'')+
-    '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Diferencia del mes':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--ink)':'var(--accent)')+'">'+(B.res<0?'−':'')+fmt(Math.abs(B.res))+'</b></div></div>');
+    (per==='sem'?semBlock(G,line):'<details style="margin-top:12px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center">Ver cuentas del mes</summary><div class="split" style="display:block">'+line('Ingresos',B.ing)+line('Pagos fijos de tu bolsa',B.fijos,true)+line('Gastos de tu bolsa',B.gastos,true)+(B.ahorro?line('Apartado para ahorro',B.ahorro,true):'')+
+    '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Diferencia del mes':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--ink)':'var(--accent)')+'">'+(B.res<0?'−':'')+fmt(Math.abs(B.res))+'</b></div></div></details>');
 }
 function semBlock(G,line){
   var cap=0;Object.keys(KATS).forEach(function(k){cap+=presupFor(k,'sem');});
@@ -595,17 +600,29 @@ function historyHtml(){
   }).join('')+'</ul>';
 }
 function renderGMain(G){
-  var el=$('main'),top='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px"><button type="button" class="btn ghost" data-act="scan">Escanear ticket</button><button type="button" class="btn ghost" data-act="resumen">Resumen del mes</button></div>'+presupHtml(G),hist=historyHtml();
+  var el=$('main'),top='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px"><button type="button" class="btn ghost" data-act="scan">Escanear ticket</button><button type="button" class="btn ghost" data-act="resumen">Resumen del mes</button></div>',pre=presupHtml(G),hist=historyHtml();
   if(!G.n){
-    el.innerHTML=top+'<div class="empty" style="margin-top:20px"><h3>Sin gastos en este periodo</h3><p>Anota cada gasto que hagas, como un café o la gasolina. Solo pide el monto, una nota y la categoría.</p><button type="button" class="btn primary" data-act="add">Agregar gasto</button></div>'+hist;
+    el.innerHTML=top+pre+'<div class="empty" style="margin-top:20px"><h3>Sin gastos en este periodo</h3><p>Anota cada gasto que hagas, como un café o la gasolina. Solo pide el monto, una nota y la categoría.</p><button type="button" class="btn primary" data-act="add">Agregar gasto</button></div>'+hist;
     return;
   }
   var html='',last='';
   G.list.forEach(function(g){
     if(g.date!==last){last=g.date;html+='<li class="dayhead"><span>'+dayLabel(g.date)+'</span><b>'+fmt(r2(G.days[g.date]))+'</b></li>';}
-    html+='<li><button type="button" class="grow" data-act="gopen" data-id="'+esc(g.id)+'"><span class="info"><span class="name">'+esc(g.note||KATS[g.cat])+'</span><span class="meta"><span class="chip">'+kl(g.cat)+'</span>'+(function(){var c=g.ap&&S.cuentas.find(function(x){return x.id===g.ap.cuenta;});return c?'<span class="chip'+(c.type==='credito'?' soon':'')+'">'+esc(c.name)+'</span>':'';})()+'</span></span><span class="amt">'+fmt(g.amount)+'</span></button></li>';
+    html+='<li><button type="button" class="grow gr" data-act="gopen" data-id="'+esc(g.id)+'"><span class="gi" aria-hidden="true">'+(KEM[g.cat]||'✨')+'</span><span class="info"><span class="name">'+esc(g.note||KATS[g.cat])+'</span><span class="meta1">'+esc(KATS[g.cat])+(function(){var c=g.ap&&S.cuentas.find(function(x){return x.id===g.ap.cuenta;});return c?' · '+esc(c.name):'';})()+'</span></span><span class="amt">'+fmt(g.amount)+'</span></button></li>';
   });
-  el.innerHTML=top+'<p class="eyebrow" style="margin:20px 8px 8px">Gastos</p><ul class="list">'+html+'</ul>'+hist;
+  el.innerHTML=top+'<p class="eyebrow" style="margin:20px 8px 8px">Gastos</p><ul class="list">'+html+'</ul>'+pre+hist;
+}
+
+function gastoDetail(g){
+  if(!g)return '<p class="sub">Ese gasto ya no existe.</p><div class="actions"><button type="button" class="btn primary" data-act="close">Cerrar</button></div>';
+  var c=g.ap&&S.cuentas.find(function(x){return x.id===g.ap.cuenta;});
+  var p=g.date.split('-'),f=+p[2]+' de '+MONTHS[+p[1]-1]+' de '+p[0];
+  var row=function(l,v){return v?'<div style="display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)"><span style="color:var(--ink-2)">'+l+'</span><b style="text-align:right">'+v+'</b></div>':'';};
+  var cred=c&&c.type==='credito';
+  return '<div style="text-align:center;padding:4px 0 8px"><div class="gi" style="width:72px;height:72px;font-size:36px;margin:0 auto 10px">'+(KEM[g.cat]||'✨')+'</div><h2 id="sheet-title" style="margin:0">'+esc(g.note||KATS[g.cat])+'</h2><p class="big" style="font-size:44px;margin:6px 0 0">'+fmt(g.amount)+'</p></div>'+
+    '<div style="margin:12px 0 4px">'+row('Categoría',esc(kl(g.cat)))+row('Fecha',esc(f))+row('Pagado con',c?esc(c.name)+(cred?' <span class="chip soon">tarjeta</span>':''):'')+'</div>'+
+    (cred?'<p class="hint">Este gasto sumó a la deuda de la tarjeta; no baja de tu efectivo.</p>':'')+
+    '<div class="actions"><button type="button" class="btn primary" data-act="gedit" data-id="'+esc(g.id)+'">Editar</button><button type="button" class="btn ghost" data-act="close">Cerrar</button></div>';
 }
 function presupForm(){
   return '<h2 id="sheet-title">Presupuesto del mes</h2><p class="sub">Cuánto quieres gastar al mes en cada categoría. En quincena se usa la mitad y en semana mes × 12 ÷ 52.</p><form id="prform" novalidate><div class="two">'+
@@ -1577,6 +1594,7 @@ function openSheet(id,kind){
   else if(id==='reglas')body.innerHTML=reglasHtml();
   else if(id==='resumen')body.innerHTML=resumenHtml();
   else if(id==='pinset')body.innerHTML=pinSetHtml();
+  else if(kind==='gd')body.innerHTML=gastoDetail(S.gastos.find(function(x){return x.id===id;}));
   else if(kind==='g')body.innerHTML=gastoForm(id==='new'?null:S.gastos.find(function(x){return x.id===id;}));
   else if(kind==='c')body.innerHTML=cuentaForm(id==='new'?null:S.cuentas.find(function(x){return x.id===id;}));
   else if(kind==='i')body.innerHTML=ingresoForm('i',id==='new'?null:S.ingresos.find(function(x){return x.id===id;}));
@@ -1857,7 +1875,8 @@ document.addEventListener('click',function(e){
   else if(a==='filter'){S.filter=el.dataset.v;render();}
   else if(a==='toggle')togglePaid(el.dataset.id);
   else if(a==='open')openSheet(el.dataset.id);
-  else if(a==='gopen')openSheet(el.dataset.id,'g');
+  else if(a==='gopen')openSheet(el.dataset.id,'gd');
+  else if(a==='gedit'){var gid=el.dataset.id;closeSheet();openSheet(gid,'g');}
   else if(a==='aopen')openSheet(el.dataset.id,'a');
   else if(a==='copen')openSheet(el.dataset.id,'c');
   else if(a==='iopen')openSheet(el.dataset.id,'i');
