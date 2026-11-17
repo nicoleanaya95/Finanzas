@@ -277,13 +277,13 @@ var r2=function(n){return Math.round(n*100)/100;};
 var dim=function(y,m){return new Date(y,m+1,0).getDate();};
 var mkey=function(y,m){return y+'-'+pad(m+1);};
 var nowD=new Date();
-var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos:[],extras:[],cobros:[],transf:[],presup:{},per:'mes',plan:{extra:0,metodo:'tasa',unico:0,unicoMes:''},view:'inicio',filter:'todos',y:nowD.getFullYear(),m:nowD.getMonth(),sheet:null,armed:false,opener:null,pin:null,key:null,locked:false,hiddenAt:0};
+var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos:[],extras:[],cobros:[],transf:[],presup:{},reglas:{},per:'mes',plan:{extra:0,metodo:'tasa',unico:0,unicoMes:''},view:'inicio',filter:'todos',y:nowD.getFullYear(),m:nowD.getMonth(),sheet:null,armed:false,opener:null,pin:null,key:null,locked:false,hiddenAt:0};
 
 /* ---------- almacenamiento local (solo en este teléfono) ----------
    Sin PIN: se guarda tal cual. Con PIN: se guarda cifrado (AES-GCM, clave derivada del PIN con PBKDF2). */
 var KEY='finanzas-app-v1',PINKEY='finanzas-app-pin';
 var enc=new TextEncoder(),dec=new TextDecoder();
-function snapshot(){return {version:3,pagos:S.pagos,meses:S.meses,gastos:S.gastos,metas:S.metas,movs:S.movs,cuentas:S.cuentas,snaps:S.snaps,ingresos:S.ingresos,extras:S.extras,cobros:S.cobros,transf:S.transf,presup:S.presup,plan:S.plan};}
+function snapshot(){return {version:3,pagos:S.pagos,meses:S.meses,gastos:S.gastos,metas:S.metas,movs:S.movs,cuentas:S.cuentas,snaps:S.snaps,ingresos:S.ingresos,extras:S.extras,cobros:S.cobros,transf:S.transf,presup:S.presup,reglas:S.reglas,plan:S.plan};}
 function b64(buf){var s='',a=new Uint8Array(buf);for(var i=0;i<a.length;i++)s+=String.fromCharCode(a[i]);return btoa(s);}
 function unb64(s){var b=atob(s),a=new Uint8Array(b.length);for(var i=0;i<b.length;i++)a[i]=b.charCodeAt(i);return a;}
 function deriveKey(pin,salt){
@@ -319,6 +319,7 @@ function apply(j){
   S.transf=(j.transf||[]).map(function(t){return normT(t.id,t);});
   S.plan=normPlan(j.plan);
   if(!S.cuentas.some(function(c){return c.type==='efectivo';}))S.cuentas.unshift(normC('c_efectivo',{name:'Efectivo',type:'efectivo',saldo:0,o:0,upd:ymd(new Date())}));
+  S.reglas={};var rg=j.reglas||{};Object.keys(rg).forEach(function(k){if(KATS[rg[k]]&&k&&k.length<=40)S.reglas[k]=rg[k];});
   S.presup={};var pr=j.presup||{};Object.keys(pr).forEach(function(k){var v=Number(pr[k]);if(KATS[k]&&v>0)S.presup[k]=v;});
 }
 function normPlan(pl){
@@ -594,7 +595,7 @@ function historyHtml(){
   }).join('')+'</ul>';
 }
 function renderGMain(G){
-  var el=$('main'),top='<button type="button" class="btn ghost" data-act="scan" style="width:100%;margin:0 0 12px">Escanear ticket o captura</button>'+presupHtml(G),hist=historyHtml();
+  var el=$('main'),top='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 12px"><button type="button" class="btn ghost" data-act="scan">Escanear ticket</button><button type="button" class="btn ghost" data-act="resumen">Resumen del mes</button></div>'+presupHtml(G),hist=historyHtml();
   if(!G.n){
     el.innerHTML=top+'<div class="empty" style="margin-top:20px"><h3>Sin gastos en este periodo</h3><p>Anota cada gasto que hagas, como un café o la gasolina. Solo pide el monto, una nota y la categoría.</p><button type="button" class="btn primary" data-act="add">Agregar gasto</button></div>'+hist;
     return;
@@ -723,6 +724,7 @@ function gastoForm(g){
   var isNew=!g;
   var v=g||S.prefillG||{amount:'',note:'',cat:'otro',date:todayStr()};
   var hint=(!g&&S.prefillG&&S.prefillG.hint)?'<p class="sub" role="status">'+esc(S.prefillG.hint)+'</p>':'';
+  if(isNew&&(!v.cat||v.cat==='otro')&&v.note){var rc=ruleFor(v.note);if(rc)v=Object.assign({},v,{cat:rc});}
   var cats=katOpts(v.cat);
   return '<h2 id="sheet-title">'+(isNew?'Nuevo gasto':'Editar gasto')+'</h2>'+
     hint+'<form id="gform" novalidate>'+
@@ -762,6 +764,7 @@ function submitGasto(e){
   var ng=normG(id,doc);gEffect(ng,1);
   if(ng.ap){var cc=S.cuentas.find(function(c){return c.id===fu;});cc.upd=todayStr();}
   try{localStorage.setItem('finanzas-ultima-fuente',fu);}catch(x){}
+  var rk=rkey(ng.note);if(rk.length>=3&&ng.cat&&ng.cat!=='otro'){S.reglas=S.reglas||{};S.reglas[rk]=ng.cat;}
   S.gastos=S.gastos.filter(function(x){return x.id!==id;}).concat([ng]);
   var p=date.split('-');S.y=+p[0];S.m=+p[1]-1;
   persist();closeSheet();render();
@@ -1084,6 +1087,69 @@ function delTransf(id,btn){
   persist();render();toast('Movimiento borrado');
 }
 
+
+/* ---------- reglas automáticas de categoría ---------- */
+function rkey(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim().slice(0,40);}
+function ruleFor(t){
+  var x=' '+rkey(t)+' ',best=null;
+  Object.keys(S.reglas||{}).forEach(function(k){if(x.indexOf(' '+k+' ')>=0||x.indexOf(k)>=0){if(!best||k.length>best.length)best=k;}});
+  return best?S.reglas[best]:null;
+}
+function reglasHtml(){
+  var ks=Object.keys(S.reglas||{}).sort();
+  return '<h2 id="sheet-title">Reglas de categorías</h2><p class="sub">Cuando guardás un gasto con descripción y categoría, la app aprende: la próxima vez que escribas algo igual (por ejemplo «texaco») elige la categoría sola.</p>'+
+    (ks.length?'<ul class="hist">'+ks.map(function(k){return '<li><span><b>'+esc(k)+'</b><small>'+esc(KATS[S.reglas[k]])+'</small></span><button type="button" class="btn ghost" data-act="rdel" data-k="'+esc(k)+'" style="min-height:36px;padding:0 12px">Quitar</button></li>';}).join('')+'</ul>':'<p class="sub">Todavía no hay reglas. Se crean solas al guardar gastos.</p>')+
+    '<div class="actions"><button type="button" class="btn primary" data-act="close">Listo</button></div>';
+}
+/* ---------- resumen del mes ---------- */
+function monthCats(y,m){
+  var key=mkey(y,m),o={},t=0;
+  S.gastos.forEach(function(g){if(g.date.slice(0,7)===key){o[g.cat]=(o[g.cat]||0)+g.amount;t+=g.amount;}});
+  return {by:o,total:r2(t)};
+}
+function resumenHtml(){
+  var y=S.y,m=S.m,py=m?y:y-1,pm=m?m-1:11;
+  var A=monthCats(y,m),B=monthCats(py,pm),bud=0;
+  Object.keys(S.presup||{}).forEach(function(k){bud+=Number(S.presup[k])||0;});
+  var d=r2(A.total-B.total);
+  var h='<h2 id="sheet-title">Resumen de '+MONTHS[m]+'</h2>';
+  h+='<div class="hero" style="margin:0 0 16px"><p class="eyebrow" style="margin-top:0">Gastaste</p><p class="big" style="font-size:34px">'+fmt(A.total)+'</p><p class="of">'+(B.total?(d>0?'Subió ':'Bajó ')+fmt(Math.abs(d))+' contra '+MONTHS[pm]+' ('+fmt(B.total)+')':'Sin datos de '+MONTHS[pm]+' para comparar')+(bud>0?' · presupuesto '+fmt(r2(bud)):'')+'</p></div>';
+  var ks=Object.keys(A.by).sort(function(a,b){return A.by[b]-A.by[a];});
+  if(!ks.length)h+='<p class="sub">Todavía no hay gastos este mes.</p>';
+  else{
+    h+='<p class="lbl">Por categoría</p><ul class="hist">'+ks.map(function(k){
+      var v=r2(A.by[k]),p=r2(B.by[k]||0),lim=Number((S.presup||{})[k])||0,dd=r2(v-p);
+      var sub=(B.total?(dd>0?'↑ ':dd<0?'↓ ':'= ')+fmt(Math.abs(dd))+' vs '+MONTHS[pm]:'')+(lim>0?(B.total?' · ':'')+(v>lim?'pasaste '+fmt(r2(v-lim)):'quedan '+fmt(r2(lim-v))):'');
+      return '<li><span><b>'+esc(KATS[k])+'</b><small>'+sub+'</small></span><span style="text-align:right">'+fmt(v)+'</span></li>';
+    }).join('')+'</ul>';
+    var top=ks[0];h+='<p class="sub">Lo que más pesó: <b>'+esc(KATS[top])+'</b> ('+Math.round(A.by[top]/A.total*100)+' % del gasto).'+(A.by.otro?' Hay '+fmt(r2(A.by.otro))+' sin clasificar: vale la pena revisarlos.':'')+'</p>';
+  }
+  return h+'<div class="actions"><button type="button" class="btn primary" data-act="close">Cerrar</button></div>';
+}
+function backupBanner(){
+  var last=0;try{last=+localStorage.getItem('finanzas-ult-respaldo')||0;}catch(x){}
+  var days=last?Math.floor((Date.now()-last)/864e5):999;
+  if(days<7)return '';
+  return '<button type="button" class="dcard" data-act="backup" style="display:flex;align-items:center;gap:12px;margin-top:14px"><span style="font-size:24px" aria-hidden="true">💾</span><span><b>'+(last?'Hace '+days+' días que no hacés respaldo':'Todavía no has hecho un respaldo')+'</b><br><span class="note" style="margin:0">Tus datos viven solo en este teléfono. Tocá para guardarlo.</span></span></button>';
+}
+function dueBanner(M){
+  if(!M.cur)return '';
+  var t=M.t.d;
+  var it=M.all.filter(function(x){return !x.paid&&(x.due===t||x.due===t+1);});
+  if(!it.length)return '';
+  var tot=r2(it.reduce(function(s,x){return s+x.amt;},0));
+  return '<button type="button" class="dcard" data-act="view" data-v="fijos" style="display:flex;align-items:center;gap:12px;margin-top:14px"><span style="font-size:24px" aria-hidden="true">⏰</span><span><b>Pagos de hoy y mañana · '+fmt(tot)+'</b><br><span class="note" style="margin:0">'+it.map(function(x){return esc(x.p.name);}).slice(0,4).join(', ')+'</span></span></button>';
+}
+function ahorroSim(D,P,base){
+  var rows=[25,50,100].map(function(x){
+    var r=simulate(D,(P.extra||0)+x,P.metodo,P.unico,P.unicoMes);
+    return {x:x,r:r,ahorro:r2(base.interes-r.interes),menos:base.meses-r.meses};
+  });
+  return '<p class="eyebrow" style="margin:20px 8px 8px">¿Y si abonás más al mes?</p><ul class="list">'+rows.map(function(o){
+    return '<li class="row" style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 16px"><span><b>+'+fmt(o.x)+' al mes</b><br><small class="note" style="margin:0">Libre en '+mesTxt(o.r.meses)+(o.menos>0?' · '+durTxt(o.menos)+' antes':'')+'</small></span><b style="color:var(--accent)">'+(o.ahorro>0?'ahorrás '+fmt(o.ahorro):'—')+'</b></li>';
+  }).join('')+'</ul><p class="note" style="margin:6px 8px 0">Comparado con tu plan actual. Estimado: el banco puede sumar seguros.</p>';
+}
+
 /* ---------- plan para salir de deudas ---------- */
 function planDebts(){
   var T=new Date(),key=mkey(T.getFullYear(),T.getMonth());
@@ -1286,6 +1352,7 @@ function amigoHtml(){
 function renderIMain(M,I){
   var C=cmodel(),h='';
   h+=amigoHtml();
+  h+=dueBanner(M)+backupBanner();
   // acciones rápidas
   h+='<div class="quick" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px"><button type="button" class="btn ghost" data-act="qadd">+ Gasto</button><button type="button" class="btn ghost" data-act="scan">Escanear</button><button type="button" class="btn ghost" data-act="cash">Efectivo</button></div>';
   h+=dashHtml(M,I);
@@ -1399,6 +1466,7 @@ function renderDeudas(){
   if(C.deu.length){
     var D=planDebts(),pl=D.length?simulate(D,S.plan.extra,S.plan.metodo,S.plan.unico,S.plan.unicoMes):null;
     h+='<button type="button" class="meta-card" data-act="plan" style="margin-top:20px"><span class="top2"><span class="name">Plan para salir de deudas</span><span class="amt">'+(pl&&!pl.stuck?mesTxt(pl.meses):'—')+'</span></span><span class="sub2"><span>'+(pl&&!pl.stuck?'Libre de deudas en '+durTxt(pl.meses):'Revisa cuotas y tasas')+'</span><span>Ver plan</span></span></button>';
+    if(pl&&!pl.stuck){var b0=pl;h+=ahorroSim(D,S.plan,b0);}
     h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que debo · '+fmt(C.deudas)+'</p><ul class="list">'+C.deu.map(cRow).join('')+'</ul>';
   }else h+='<div class="empty"><h3>Sin deudas registradas</h3><p>Cuando agregues tarjetas o préstamos en Cuentas, aparecen aquí.</p></div>';
   h+='<div class="actions" style="margin-top:16px"><button type="button" class="btn primary" data-act="vlock">Bloquear y volver</button></div>';
@@ -1480,6 +1548,8 @@ function openSheet(id,kind){
   else if(id==='scan')body.innerHTML=scanSheet();
   else if(id==='transf')body.innerHTML=transfForm(kind==='cash');
   else if(id==='presup')body.innerHTML=presupForm();
+  else if(id==='reglas')body.innerHTML=reglasHtml();
+  else if(id==='resumen')body.innerHTML=resumenHtml();
   else if(id==='pinset')body.innerHTML=pinSetHtml();
   else if(kind==='g')body.innerHTML=gastoForm(id==='new'?null:S.gastos.find(function(x){return x.id===id;}));
   else if(kind==='c')body.innerHTML=cuentaForm(id==='new'?null:S.cuentas.find(function(x){return x.id===id;}));
@@ -1505,6 +1575,7 @@ function optsHtml(){
     '<div class="actions">'+
       '<button type="button" class="btn ghost" data-act="backup">Guardar respaldo (archivo)</button>'+
       '<label class="btn ghost filebtn">Restaurar respaldo<input type="file" id="imp" accept=".json,application/json" aria-label="Elegir archivo de respaldo"></label>'+
+      '<button type="button" class="btn ghost" data-act="reglas">Reglas de categorías</button>'+
       '<button type="button" class="btn ghost" data-act="pinset">'+(S.pin?'Cambiar o quitar PIN':'Poner PIN')+'</button>'+
       (S.pin?'<button type="button" class="btn ghost" data-act="lock">Bloquear ahora</button>':'')+
       '<button type="button" class="btn primary" data-act="close">Listo</button>'+
@@ -1601,6 +1672,7 @@ function delItem(){
 
 /* ---------- respaldo ---------- */
 function backup(){
+  try{localStorage.setItem('finanzas-ult-respaldo',String(Date.now()));}catch(x){}
   var o=snapshot();o.app='mis-pagos';o.exportado=new Date().toISOString();var data=JSON.stringify(o,null,2);
   var name='finanzas-respaldo-'+todayStr()+'.json';
   var file=null;
@@ -1778,6 +1850,9 @@ document.addEventListener('click',function(e){
   else if(a==='scan')openSheet('scan');
   else if(a==='qadd')openSheet('new','g');
   else if(a==='presup')openSheet('presup');
+  else if(a==='reglas'){closeSheet();openSheet('reglas');}
+  else if(a==='resumen')openSheet('resumen');
+  else if(a==='rdel'){delete S.reglas[el.dataset.k];persist();$('sheet-body').innerHTML=reglasHtml();}
   else if(a==='per'){S.per=el.dataset.v;render();}
   else if(a==='tdel')delTransf(el.dataset.id,el);
   else if(a==='pinset'){closeSheet();openSheet('pinset');}
@@ -1792,6 +1867,10 @@ document.addEventListener('click',function(e){
     $('sheet-body').innerHTML=metaForm(S.metas.find(function(x){return x.id===mid;}));toast('Movimiento borrado');
   }
 });
+document.addEventListener('input',function(e){
+  if(e.target&&e.target.id==='g-note'){var c=$('g-cat');if(c&&(c.value==='otro'||c.dataset.auto==='1')){var r=ruleFor(e.target.value);if(r){c.value=r;c.dataset.auto='1';}}}
+});
+document.addEventListener('change',function(e){if(e.target&&e.target.id==='g-cat')e.target.dataset.auto='';});
 document.addEventListener('submit',function(e){
   var id=e.target.id;
   if(id==='pform')submitForm(e);
