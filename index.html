@@ -1293,15 +1293,39 @@ function imodel(M){
   var queda=r2(esperado-M.bolsa-G.contado-A.mes);
   return {fijos:fijos,extras:extras,esperado:r2(esperado),recibido:r2(recibido),gastos:G.contado,tarjeta:G.tarjeta,ahorro:A.mes,queda:queda};
 }
+function availCalc(M){
+  var today=M.t.d,last=dim(S.y,S.m),disp=0,hasD=false;
+  S.cuentas.forEach(function(c){var lib=c.saldo-(c.apart||0);if(c.type==='efectivo'||c.type==='ahorro'||c.type==='corriente'||c.type==='digital'){disp+=lib;hasD=true;}});
+  var ds=S.ingresos.map(function(i){return Math.min(i.day,last);}).filter(function(d){return d>today;}).sort(function(a,b){return a-b;});
+  var endD=ds.length?ds[0]:last+1;
+  var bills=r2(M.all.reduce(function(sm,it){return(!it.paid&&!it.p.planilla&&it.due>=today&&it.due<endD)?sm+it.amt:sm;},0));
+  var libre=r2(disp-bills),nd=Math.max(1,endD-today);
+  return {hasD:hasD,disp:r2(disp),libre:libre,nd:nd,dia:libre>0?r2(libre/nd):0};
+}
+function balCard(M,I){
+  var line=function(l,v,neg){return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:15px;padding:4px 0"><span style="color:var(--ink-2)">'+l+'</span><b style="font-variant-numeric:tabular-nums">'+(neg?'−':'')+fmt(v)+'</b></div>';};
+  var diff=I.queda;
+  return '<div class="dcard" style="cursor:default"><p class="ttl">Balance de '+MONTHS[S.m]+'</p>'+
+    line('Ingresos del mes',I.esperado)+line('Pagos fijos',M.bolsa,true)+line('Gastos de tu bolsa',I.gastos,true)+line('Apartado para ahorro',I.ahorro,true)+
+    '<div style="display:flex;justify-content:space-between;border-top:1px solid var(--line);margin-top:6px;padding-top:8px"><span style="color:var(--ink-2)">'+(diff<0?'Diferencia del mes':'Sobra del mes')+'</span><b style="font-size:18px">'+(diff<0?'−':'')+fmt(Math.abs(diff))+'</b></div>'+
+    ((M.planilla>0||I.tarjeta>0)?'<details style="margin-top:10px"><summary style="font-size:13px;color:var(--ink-2);cursor:pointer;min-height:32px;display:flex;align-items:center">¿Cómo se calcula?</summary>'+(M.planilla>0?'<div class="nexts"><p class="next">'+fmt(M.planilla)+' de descuentos de planilla no se restan aquí porque ya vienen descontados de tu salario.</p></div>':'')+(I.tarjeta>0?'<div class="nexts"><p class="next">Además cargaste <b>'+fmt(I.tarjeta)+'</b> a tarjetas. No resta aquí porque lo pagas cuando pagas la tarjeta.</p></div>':'')+'</details>':'')+'</div>';
+}
 function renderIHero(M,I){
+  var A=availCalc(M);
+  if(M.cur&&A.hasD){
+    var d=new Date(),i=(d.getFullYear()*372+d.getMonth()*31+d.getDate())%AMIGO.length;
+    var h=d.getHours(),sal=h<12?'Buen día':h<19?'Buenas tardes':'Buenas noches';
+    $('hero').innerHTML=navHtml()+
+      '<div style="display:flex;align-items:center;gap:12px;margin-top:6px"><div style="flex:1;min-width:0"><p class="eyebrow" style="margin-top:0">'+sal+'</p>'+
+      (A.dia>0?'<p class="big">'+fmt(A.dia)+'</p><p class="of">para gastar hoy sin culpa, ≈ cada día hasta tu próximo pago</p>':'<p class="big" style="font-size:30px;line-height:1.1">Vamos con calma</p><p class="of">Primero lo fijo; lo demás lo vemos día a día.</p>')+
+      '</div>'+PIG+'</div>'+
+      '<div class="nexts"><p class="next" style="font-weight:600">'+AMIGO[i]+'</p></div>';
+    return;
+  }
   var line=function(l,v,neg){return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:15px;padding:3px 0"><span style="color:var(--ink-2)">'+l+'</span><b style="font-variant-numeric:tabular-nums">'+(neg?'−':'')+fmt(v)+'</b></div>';};
-  $('hero').innerHTML=navHtml()+
-    '<p class="eyebrow">'+(I.queda<0?'Te faltan este mes':'Te queda este mes')+'</p>'+
-    '<p class="big">'+fmt(Math.abs(I.queda))+'</p>'+
+  $('hero').innerHTML=navHtml()+'<p class="eyebrow">'+(I.queda<0?'Diferencia del mes':'Te queda este mes')+'</p><p class="big">'+fmt(Math.abs(I.queda))+'</p>'+
     '<p class="of">'+(S.ingresos.length||I.extras.length?'Ingresos menos pagos, gastos y ahorro':'Agrega tus ingresos para ver cuánto te queda')+'</p>'+
-    '<div class="split" style="display:block">'+
-      line('Ingresos del mes',I.esperado)+line('Pagos fijos',M.bolsa,true)+line('Gastos de tu bolsa',I.gastos,true)+line('Apartado para ahorro',I.ahorro,true)+
-    '</div>'+((M.planilla>0||I.tarjeta>0)?'<details style="margin-top:10px"><summary style="font-size:13px;color:var(--ink-2);cursor:pointer;min-height:32px;display:flex;align-items:center">¿Cómo se calcula?</summary>'+(M.planilla>0?'<div class="nexts"><p class="next">'+fmt(M.planilla)+' de descuentos de planilla no se restan aquí porque ya vienen descontados de tu salario.</p></div>':'')+(I.tarjeta>0?'<div class="nexts"><p class="next">Además cargaste <b>'+fmt(I.tarjeta)+'</b> a tarjetas. No resta aquí porque lo pagas cuando pagas la tarjeta.</p></div>':'')+'</details>':'');
+    '<div class="split" style="display:block">'+line('Ingresos del mes',I.esperado)+line('Pagos fijos',M.bolsa,true)+line('Gastos de tu bolsa',I.gastos,true)+line('Apartado para ahorro',I.ahorro,true)+'</div>';
 }
 function ringSvg(pct,color,txt,sub){
   var p=Math.max(0,Math.min(100,pct));
@@ -1351,11 +1375,13 @@ function amigoHtml(){
 }
 function renderIMain(M,I){
   var C=cmodel(),h='';
-  h+=amigoHtml();
+  var A0=availCalc(M),nh=M.cur&&A0.hasD;
+  if(!nh)h+=amigoHtml();
   h+=dueBanner(M)+backupBanner();
   // acciones rápidas
   h+='<div class="quick" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px"><button type="button" class="btn ghost" data-act="qadd">+ Gasto</button><button type="button" class="btn ghost" data-act="scan">Escanear</button><button type="button" class="btn ghost" data-act="cash">Efectivo</button></div>';
   h+=dashHtml(M,I);
+  if(nh)h+=balCard(M,I);
   // próximos pagos
   if(M.cur){
     var prox=M.all.filter(function(it){return !it.paid&&it.due>=M.t.d;}).slice(0,3);
