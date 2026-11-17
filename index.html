@@ -1013,7 +1013,7 @@ function renderCHero(C,full){
     return;
   }
   $('hero').innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow" style="margin-top:4px">Patrimonio neto</p>'+
-    '<p class="big">'+fmt(C.neto)+'</p>'+
+    '<p class="big" style="font-size:34px">'+fmt(C.neto)+'</p>'+
     '<p class="of">Lo que tienes menos lo que debes</p></div><img src="cuchito-deudas.png" width="92" height="85" alt="" style="flex:none;object-fit:contain"></div>'+
     '<div class="split"><div><span>Tengo</span><b>'+fmt(C.activos)+'</b></div><div><span>Debo</span><b>'+fmt(C.deudas)+'</b></div></div>'+
     (Object.keys(C.byType).length?'<div class="cats">'+Object.keys(CTYPES).filter(function(k){return C.byType[k]!=null;}).map(function(k){return '<span>'+CTYPES[k]+' '+fmt(r2(C.byType[k]))+'</span>';}).join('')+'</div>':'');
