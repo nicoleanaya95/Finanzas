@@ -441,7 +441,7 @@ function norm(id,d){
     id:String(id),name:String(d.name||'Sin nombre'),day:(day>=1&&day<=31)?day:1,
     amount:Number(d.amount)||0,kind:KINDS[d.kind]?d.kind:'otro',review:!!d.review,
     via:d.via==='apple'?'apple':'',note:String(d.note||''),
-    mes:(Number.isInteger(d.mes)&&d.mes>=0&&d.mes<=11)?d.mes:null,o:Number(d.o)||0,cuenta:String(d.cuenta||''),planilla:!!d.planilla,
+    mes:(Number.isInteger(d.mes)&&d.mes>=0&&d.mes<=11)?d.mes:null,o:Number(d.o)||0,cuenta:String(d.cuenta||''),desde:String(d.desde||''),planilla:!!d.planilla,
     hasta:/^\d{4}-\d{2}$/.test(String(d.hasta))?String(d.hasta):''
   };
 }
@@ -1664,7 +1664,7 @@ function toast(msg){
 }
 function monthDoc(key){
   var c=S.meses[key]||{};
-  return {paid:Object.assign({},c.paid),amounts:Object.assign({},c.amounts),ing:Object.assign({},c.ing),amort:Object.assign({},c.amort)};
+  return {paid:Object.assign({},c.paid),amounts:Object.assign({},c.amounts),ing:Object.assign({},c.ing),amort:Object.assign({},c.amort),deduct:Object.assign({},c.deduct)};
 }
 function togglePaid(id){
   var key=mkey(S.y,S.m),doc=monthDoc(key);
@@ -1684,6 +1684,20 @@ function togglePaid(id){
     var a=doc.amort[id],cc=S.cuentas.find(function(x){return x.id===a.cuenta;});
     if(cc){cc.saldo=r2(Math.abs(cc.saldo)+a.capital);S.snaps.push(normSn(newId('s'),{cuenta:cc.id,saldo:cc.saldo,date:todayStr(),t:Date.now()}));msg=cc.name+': se devolvieron '+fmt(a.capital)+' al saldo';}
     delete doc.amort[id];
+  }
+  var src=p&&p.desde?S.cuentas.find(function(x){return x.id===p.desde;}):null;
+  if(doc.paid[id]&&src&&!doc.deduct[id]){
+    var amt2=doc.amounts[id]!=null?Number(doc.amounts[id]):p.amount;
+    src.saldo=r2(src.saldo-amt2);src.upd=todayStr();
+    doc.deduct[id]={cuenta:src.id,amount:amt2};
+    S.snaps.push(normSn(newId('s'),{cuenta:src.id,saldo:src.saldo,date:todayStr(),t:Date.now()}));
+    msg=(msg?msg+' · ':'')+src.name+': −'+fmt(amt2);
+  }else if(!doc.paid[id]&&doc.deduct[id]){
+    var d2=doc.deduct[id],c2=S.cuentas.find(function(x){return x.id===d2.cuenta;});
+    if(c2){c2.saldo=r2(c2.saldo+d2.amount);S.snaps.push(normSn(newId('s'),{cuenta:c2.id,saldo:c2.saldo,date:todayStr(),t:Date.now()}));msg=c2.name+': se devolvieron '+fmt(d2.amount);}
+    delete doc.deduct[id];
+  }else if(doc.paid[id]&&p&&!p.desde&&!p.planilla&&!c){
+    msg='Pagado. Para que descuente de tu cuenta, abrí el pago y elegí «Se paga desde».';
   }
   S.meses[key]=doc;persist();render();
   if(msg)toast(msg);
@@ -1782,6 +1796,7 @@ function formHtml(p){
       '<div class="field"><label for="f-via">Cómo se cobra</label><select id="f-via">'+via+'</select></div>'+
       '<div class="field"><label for="f-note">Nota (opcional)</label><input type="text" id="f-note" maxlength="80" autocomplete="off" placeholder="Ej. plan, número o cuenta" value="'+esc(v.note)+'"></div>'+
       (S.cuentas.some(function(c){return isDebt(c.type);})?'<div class="field"><label for="f-cta">Abona a (préstamo o tarjeta)</label><select id="f-cta"><option value="">Ninguno</option>'+S.cuentas.filter(function(c){return isDebt(c.type);}).map(function(c){return '<option value="'+esc(c.id)+'"'+(v.cuenta===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div><p class="hint">Al marcarlo pagado se descuenta del saldo. Si la deuda tiene tasa, solo se descuenta lo que va a capital.</p>':'')+
+      '<div class="field"><label for="f-desde">Se paga desde (descuenta al marcar pagado)</label><select id="f-desde"><option value="">No descontar</option>'+S.cuentas.filter(function(c){return !isDebt(c.type);}).map(function(c){return '<option value="'+esc(c.id)+'"'+(v.desde===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div>'+
       '<label class="tick"><input type="checkbox" id="f-plan"'+(v.planilla?' checked':'')+'> Me lo descuentan de planilla</label>'+
       '<label class="tick"><input type="checkbox" id="f-rev"'+(v.review?' checked':'')+'> Monto por revisar</label>'+
       '<p class="err" id="f-err" role="alert" hidden></p>'+
@@ -1817,7 +1832,7 @@ function submitForm(e){
   var rep=$('f-rep').value;
   var id=S.sheet.id==='new'?newId('p'):S.sheet.id;
   var old=S.pagos.find(function(x){return x.id===id;});
-  var doc={name:name,day:day,amount:r2(amt),kind:$('f-kind').value,review:$('f-rev').checked,via:$('f-via').value,note:$('f-note').value.trim(),o:old?old.o:Date.now(),cuenta:$('f-cta')?$('f-cta').value:(old?old.cuenta:''),planilla:$('f-plan').checked,hasta:/^\d{4}-\d{2}$/.test($('f-hasta').value)?$('f-hasta').value:''};
+  var doc={name:name,day:day,amount:r2(amt),kind:$('f-kind').value,review:$('f-rev').checked,via:$('f-via').value,note:$('f-note').value.trim(),o:old?old.o:Date.now(),cuenta:$('f-cta')?$('f-cta').value:(old?old.cuenta:''),desde:$('f-desde')?$('f-desde').value:'',planilla:$('f-plan').checked,hasta:/^\d{4}-\d{2}$/.test($('f-hasta').value)?$('f-hasta').value:''};
   if(rep!=='')doc.mes=parseInt(rep,10);
   S.pagos=S.pagos.filter(function(x){return x.id!==id;}).concat([norm(id,doc)]);
   if(mamtEl){
@@ -1881,7 +1896,8 @@ function importFile(file){
         Object.keys(m.amounts||{}).forEach(function(i){var a=Number(m.amounts[i]);if(okId.test(i)&&isFinite(a))amounts[i]=a;});
         var ing={};Object.keys(m.ing||{}).forEach(function(i){if(okId.test(i))ing[i]=!!m.ing[i];});
         var amort={};Object.keys(m.amort||{}).forEach(function(i){var a=m.amort[i];if(okId.test(i)&&a&&typeof a==='object')amort[i]={cuenta:String(a.cuenta||''),interes:Number(a.interes)||0,capital:Number(a.capital)||0};});
-        S.meses[k]={paid:paid,amounts:amounts,ing:ing,amort:amort};
+        var deduct={};Object.keys(m.deduct||{}).forEach(function(i){var a=m.deduct[i];if(okId.test(i)&&a&&typeof a==='object')deduct[i]={cuenta:String(a.cuenta||''),amount:Number(a.amount)||0};});
+        S.meses[k]={paid:paid,amounts:amounts,ing:ing,amort:amort,deduct:deduct};
       });
     }
     var ng=0,nm=0;
