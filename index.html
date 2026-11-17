@@ -917,7 +917,14 @@ function daysAgo(ds){
   var n=Math.round((t-d)/864e5);
   return n<=0?'actualizado hoy':n===1?'actualizado ayer':'actualizado hace '+n+' días';
 }
-function renderCHero(C){
+function renderCHero(C,full){
+  if(!full){
+    $('hero').innerHTML='<p class="eyebrow" style="margin-top:4px">Lo que tengo</p>'+
+      '<p class="big">'+fmt(C.activos)+'</p>'+
+      '<p class="of">En bancos, efectivo y ahorros</p>'+
+      (Object.keys(C.byType).length?'<div class="cats">'+Object.keys(CTYPES).filter(function(k){return C.byType[k]!=null&&!isDebt(k);}).map(function(k){return '<span>'+CTYPES[k]+' '+fmt(r2(C.byType[k]))+'</span>';}).join('')+'</div>':'');
+    return;
+  }
   $('hero').innerHTML='<p class="eyebrow" style="margin-top:4px">Patrimonio neto</p>'+
     '<p class="big">'+fmt(C.neto)+'</p>'+
     '<p class="of">Lo que tienes menos lo que debes</p>'+
@@ -939,12 +946,8 @@ function renderCMain(C){
     return;
   }
   var h='';
-  if(C.deu.length){
-    var D=planDebts(),pl=D.length?simulate(D,S.plan.extra,S.plan.metodo,S.plan.unico,S.plan.unicoMes):null;
-    h+='<button type="button" class="meta-card" data-act="plan" style="margin-top:20px"><span class="top2"><span class="name">Plan para salir de deudas</span><span class="amt">'+(pl&&!pl.stuck?mesTxt(pl.meses):'—')+'</span></span><span class="sub2"><span>'+(pl&&!pl.stuck?'Libre de deudas en '+durTxt(pl.meses):'Revisa cuotas y tasas')+'</span><span>Ver plan</span></span></button>';
-  }
   if(C.act.length)h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que tengo · '+fmt(C.activos)+'</p><ul class="list">'+C.act.map(cRow).join('')+'</ul>';
-  if(C.deu.length)h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que debo · '+fmt(C.deudas)+'</p><ul class="list">'+C.deu.map(cRow).join('')+'</ul>';
+  h+='<button type="button" class="dcard" data-act="view" data-v="deudas" style="display:flex;align-items:center;gap:12px"><span style="font-size:26px" aria-hidden="true">🔒</span><span><b style="font-size:17px">Mis deudas</b><br><span class="note" style="margin:0">Aparte y con PIN, para verlas cuando vos quieras.</span></span></button>';
   h+='<div class="actions" style="margin-top:16px"><button type="button" class="btn primary" data-act="cash">Sacar efectivo</button><button type="button" class="btn ghost" data-act="transf">Mover entre cuentas</button></div>';
   var tl=S.transf.slice().sort(function(a,b){return a.date<b.date?1:a.date>b.date?-1:b.t-a.t;}).slice(0,10);
   if(tl.length)h+='<p class="eyebrow" style="margin:20px 8px 8px">Últimos movimientos</p><ul class="list hist" style="padding:4px 14px">'+tl.map(function(t){
@@ -1264,17 +1267,6 @@ function dashHtml(M,I){
       return '<div class="cl"><span>'+kl(o.k)+'</span><b>'+fmt(o.v)+(b>0?' <span style="font-weight:400;color:var(--ink-2)">de '+fmt(b)+'</span>':'')+'</b><i><u style="width:'+w+'%;'+(b>0&&o.v>b?'background:#E8A33D':'')+'"></u></i></div>';}).join('');
     h+='<button type="button" class="dcard" data-act="view" data-v="gastos"><p class="ttl">Tus gastos de '+MONTHS[S.m]+'</p><div class="row3">'+(bud>0?ringSvg(pct,col,pct+'%','del plan'):'')+'<div style="flex:1;min-width:0"><p class="num" style="font-size:28px">'+fmt(G.total)+'</p><p class="note" style="margin:2px 0 0">'+(bud>0?'de '+fmt(r2(bud))+' presupuestados':'sin presupuesto aún')+'</p></div></div>'+(tops?'<div style="margin-top:14px">'+tops+'</div>':'')+'</button>';
   }
-  /* 3. deudas */
-  var tj=0,pr=0;
-  S.cuentas.forEach(function(c){var v=Math.abs(c.saldo);if(c.type==='credito')tj+=v;else if(c.type==='prestamo')pr+=v;});
-  var dt=tj+pr;
-  if(dt>0){
-    var lib2='';
-    try{var D=planDebts(),pl=D.length?simulate(D,S.plan.extra,S.plan.metodo,S.plan.unico,S.plan.unicoMes):null;if(pl&&!pl.stuck)lib2='Con tu plan actual: libre de deudas en <b>'+mesTxt(pl.meses)+'</b>';}catch(x){}
-    h+='<button type="button" class="dcard" data-act="view" data-v="cuentas"><p class="ttl">Lo que debés</p><p class="num" style="font-size:30px">'+fmt(r2(dt))+'</p>'+
-      '<div class="stack" aria-hidden="true"><span style="width:'+Math.round(tj/dt*100)+'%;background:var(--late)"></span><span style="width:'+Math.round(pr/dt*100)+'%;background:var(--accent)"></span></div>'+
-      '<p class="note" style="margin:0"><span style="color:var(--late)">●</span> Tarjetas '+fmt(r2(tj))+' &nbsp; <span style="color:var(--accent)">●</span> Préstamos '+fmt(r2(pr))+'</p>'+(lib2?'<p class="note">'+lib2+'</p>':'')+'</button>';
-  }
   /* 4. metas */
   var A=amodel();
   if(A.metas.length){
@@ -1283,7 +1275,7 @@ function dashHtml(M,I){
   }
   return h;
 }
-var PIG='<svg viewBox="0 0 120 90" width="76" height="58" aria-hidden="true" focusable="false"><g stroke="#8a4b5c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="58" cy="13" r="9" fill="#F7D774" stroke="#b08a1e"/><text x="58" y="17.5" font-size="12" font-weight="700" text-anchor="middle" fill="#8a6a10" stroke="none" font-family="sans-serif">$</text><rect x="36" y="70" width="11" height="15" rx="5" fill="#F4A3B8"/><rect x="51" y="72" width="11" height="13" rx="5" fill="#F4A3B8"/><rect x="72" y="72" width="11" height="13" rx="5" fill="#F4A3B8"/><rect x="86" y="70" width="11" height="15" rx="5" fill="#F4A3B8"/><path d="M26 50c-9-3-10-13-3-13 5 0 4 7-1 6" fill="none"/><ellipse cx="62" cy="52" rx="38" ry="26" fill="#F8B4C4"/><path d="M78 33Q80 15 93 19Q93 30 89 37Z" fill="#F4A3B8"/><ellipse cx="97" cy="55" rx="9" ry="7.5" fill="#F39AB0"/><circle cx="94.5" cy="55" r="1.4" fill="#8a4b5c" stroke="none"/><circle cx="99.5" cy="55" r="1.4" fill="#8a4b5c" stroke="none"/><circle cx="84" cy="46" r="2.8" fill="#8a4b5c" stroke="none"/><circle cx="82" cy="57" r="4.2" fill="#F27A9B" stroke="none" opacity=".45"/><path d="M52 29h20" fill="none"/></g></svg>';
+var PIG='<svg viewBox="0 0 100 90" width="70" height="63" aria-hidden="true" focusable="false"><g stroke="#8a4b5c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="50" cy="12" r="8.5" fill="#F7D774" stroke="#b08a1e"/><text x="50" y="16.3" font-size="11" font-weight="700" text-anchor="middle" fill="#8a6a10" stroke="none" font-family="sans-serif">$</text><path d="M20 30Q8 22 10 42Q12 52 26 50Z" fill="#F4A3B8"/><path d="M80 30Q92 22 90 42Q88 52 74 50Z" fill="#F4A3B8"/><ellipse cx="50" cy="54" rx="34" ry="30" fill="#F8B4C4"/><ellipse cx="50" cy="64" rx="15" ry="11" fill="#F39AB0"/><ellipse cx="44.5" cy="64" rx="2.6" ry="3.6" fill="#8a4b5c" stroke="none"/><ellipse cx="55.5" cy="64" rx="2.6" ry="3.6" fill="#8a4b5c" stroke="none"/><circle cx="37" cy="46" r="3.6" fill="#3d2530" stroke="none"/><circle cx="63" cy="46" r="3.6" fill="#3d2530" stroke="none"/><circle cx="38.2" cy="44.8" r="1.2" fill="#fff" stroke="none"/><circle cx="64.2" cy="44.8" r="1.2" fill="#fff" stroke="none"/><circle cx="28" cy="58" r="4.6" fill="#F27A9B" stroke="none" opacity=".5"/><circle cx="72" cy="58" r="4.6" fill="#F27A9B" stroke="none" opacity=".5"/><path d="M45 77q5 3.5 10 0" fill="none" stroke-width="2.2"/></g></svg>';
 var AMIGO=['Paso a paso, vas bien.','Cada gasto anotado es un paso hacia tu viaje.','Ordenar tu plata también es cuidarte.','Hoy basta con anotar lo de hoy.','Lo difícil ya lo empezaste.','Las deudas se acaban; tu plan ya está en marcha.','Un día a la vez.'];
 function amigoHtml(){
   var d=new Date(),i=(d.getFullYear()*372+d.getMonth()*31+d.getDate())%AMIGO.length;
@@ -1295,9 +1287,6 @@ function renderIMain(M,I){
   // acciones rápidas
   h+='<div class="quick" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px"><button type="button" class="btn ghost" data-act="qadd">+ Gasto</button><button type="button" class="btn ghost" data-act="scan">Escanear</button><button type="button" class="btn ghost" data-act="cash">Efectivo</button></div>';
   h+=dashHtml(M,I);
-  // patrimonio
-  h+='<button type="button" class="meta-card" data-act="view" data-v="cuentas" style="margin-top:20px"><span class="top2"><span class="name">Patrimonio neto</span><span class="amt">'+fmt(C.neto)+'</span></span>'+
-    '<span class="sub2"><span>Tengo '+fmt(C.activos)+' · Debo '+fmt(C.deudas)+'</span><span>'+(S.cuentas.length?'Ver cuentas':'Agregar cuentas')+'</span></span></button>';
   // próximos pagos
   if(M.cur){
     var prox=M.all.filter(function(it){return !it.paid&&it.due>=M.t.d;}).slice(0,3);
@@ -1365,15 +1354,64 @@ function toggleIng(id){
   S.meses[key]=doc;persist();render();
 }
 
-var VIEWS={inicio:'Agregar ingreso',fijos:'Agregar pago',gastos:'Agregar gasto',ahorros:'Nueva meta',cuentas:'Nueva cuenta'};
+var VIEWS={inicio:'Agregar ingreso',fijos:'Agregar pago',gastos:'Agregar gasto',ahorros:'Nueva meta',cuentas:'Nueva cuenta',deudas:'Nueva cuenta'};
+/* ---------- deudas con PIN aparte ---------- */
+var VKEY='finanzas-app-vault',VOPEN=false;
+function vaultCfg(){try{return JSON.parse(localStorage.getItem(VKEY)||'null');}catch(e){return null;}}
+function vaultForm(cfg){
+  return '<form id="dvform" novalidate style="margin-top:20px">'+
+    (cfg?'<div class="field"><label for="v-pin">PIN de deudas</label><input type="password" id="v-pin" inputmode="numeric" maxlength="6" autocomplete="off"></div>'
+        :'<p class="sub">Este PIN es solo para ver tus deudas. No es el de la app y no cifra tus datos: sirve para que no queden a la vista.</p><div class="two"><div class="field"><label for="v-new">PIN nuevo (4 a 6 números)</label><input type="password" id="v-new" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="field"><label for="v-rep">Repetilo</label><input type="password" id="v-rep" inputmode="numeric" maxlength="6" autocomplete="off"></div></div>')+
+    '<p class="err" id="v-err" role="alert" hidden></p>'+
+    '<div class="actions"><button type="submit" class="btn primary">'+(cfg?'Abrir':'Guardar PIN y abrir')+'</button><button type="button" class="btn ghost" data-act="view" data-v="cuentas">Volver</button></div></form>';
+}
+function submitVault(e){
+  e.preventDefault();
+  var cfg=vaultCfg(),err=$('v-err');
+  var fail=function(m){err.textContent=m;err.hidden=false;};
+  if(cfg){
+    var p=$('v-pin').value;
+    hashPin(p,cfg.salt).then(function(h){
+      if(h===cfg.hash){VOPEN=true;render();}else{fail('Ese PIN no es correcto.');}
+    });
+  }else{
+    var a=$('v-new').value,b=$('v-rep').value;
+    if(!/^\d{4,6}$/.test(a))return fail('El PIN debe tener de 4 a 6 números.');
+    if(a!==b)return fail('Los dos PIN no coinciden.');
+    var salt=hex(crypto.getRandomValues(new Uint8Array(16)));
+    hashPin(a,salt).then(function(h){
+      try{localStorage.setItem(VKEY,JSON.stringify({salt:salt,hash:h,len:a.length}));}catch(x){}
+      VOPEN=true;render();toast('PIN de deudas guardado');
+    });
+  }
+}
+function renderDeudas(){
+  var cfg=vaultCfg();
+  if(!VOPEN){
+    $('hero').innerHTML='<p class="eyebrow" style="margin-top:4px">Deudas</p><p class="big" style="font-size:34px">🔒 Privado</p><p class="of">'+(cfg?'Escribí tu PIN para verlas.':'Elegí un PIN para guardarlas aparte.')+'</p>';
+    $('main').innerHTML=vaultForm(cfg);
+    return;
+  }
+  var C=cmodel();renderCHero(C,true);
+  var h='';
+  if(C.deu.length){
+    var D=planDebts(),pl=D.length?simulate(D,S.plan.extra,S.plan.metodo,S.plan.unico,S.plan.unicoMes):null;
+    h+='<button type="button" class="meta-card" data-act="plan" style="margin-top:20px"><span class="top2"><span class="name">Plan para salir de deudas</span><span class="amt">'+(pl&&!pl.stuck?mesTxt(pl.meses):'—')+'</span></span><span class="sub2"><span>'+(pl&&!pl.stuck?'Libre de deudas en '+durTxt(pl.meses):'Revisa cuotas y tasas')+'</span><span>Ver plan</span></span></button>';
+    h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que debo · '+fmt(C.deudas)+'</p><ul class="list">'+C.deu.map(cRow).join('')+'</ul>';
+  }else h+='<div class="empty"><h3>Sin deudas registradas</h3><p>Cuando agregues tarjetas o préstamos en Cuentas, aparecen aquí.</p></div>';
+  h+='<div class="actions" style="margin-top:16px"><button type="button" class="btn primary" data-act="vlock">Bloquear y volver</button></div>';
+  $('main').innerHTML=h;
+}
 function render(){
   var v=S.view;
-  document.querySelectorAll('.nav [data-act="view"]').forEach(function(b){b.setAttribute('aria-current',b.dataset.v===v?'page':'false');});
+  document.querySelectorAll('.nav [data-act="view"]').forEach(function(b){b.setAttribute('aria-current',(b.dataset.v===v||(v==='deudas'&&b.dataset.v==='cuentas'))?'page':'false');});
+  if(v!=='deudas')VOPEN=false;
   $('fab-txt').textContent=VIEWS[v];
   var M=model();
   if(v==='gastos'){var G=gmodel(M,S.per);renderGHero(G);renderGMain(G);}
   else if(v==='ahorros')renderA();
-  else if(v==='cuentas'){var C=cmodel();renderCHero(C);renderCMain(C);}
+  else if(v==='cuentas'){var C=cmodel();renderCHero(C,false);renderCMain(C);}
+  else if(v==='deudas')renderDeudas();
   else if(v==='inicio'){var I=imodel(M);renderIHero(M,I);renderIMain(M,I);}
   else{renderHero(M);renderMain(M);}
 }
@@ -1729,11 +1767,12 @@ document.addEventListener('click',function(e){
   else if(a==='btoggle')toggleCobro(el.dataset.id);
   else if(a==='itoggle')toggleIng(el.dataset.id);
   else if(a==='view'){S.view=el.dataset.v;try{localStorage.setItem('finanzas-vista',S.view);}catch(x){}render();window.scrollTo(0,0);}
-  else if(a==='add')openSheet('new',{gastos:'g',ahorros:'a',cuentas:'c',inicio:'i'}[S.view]||'');
+  else if(a==='add')openSheet('new',{gastos:'g',ahorros:'a',cuentas:'c',deudas:'c',inicio:'i'}[S.view]||'');
   else if(a==='opts')openSheet('opts');
   else if(a==='plan')openSheet('plan');
   else if(a==='transf')openSheet('transf');
   else if(a==='cash')openSheet('transf','cash');
+  else if(a==='vlock'){VOPEN=false;S.view='cuentas';render();window.scrollTo(0,0);}
   else if(a==='scan')openSheet('scan');
   else if(a==='qadd')openSheet('new','g');
   else if(a==='presup')openSheet('presup');
@@ -1758,6 +1797,7 @@ document.addEventListener('submit',function(e){
   else if(id==='mform')submitMeta(e);
   else if(id==='vform')submitMov(e);
   else if(id==='pinform')submitPin(e);
+  else if(id==='dvform')submitVault(e);
   else if(id==='cform')submitCuenta(e);
   else if(id==='sform')submitSaldo(e);
   else if(id==='iform')submitIngreso(e);
@@ -1777,6 +1817,7 @@ document.addEventListener('keydown',function(e){
   if(e.key==='Escape'&&S.sheet)closeSheet();
 });
 document.addEventListener('visibilitychange',function(){
+  if(document.hidden&&VOPEN){VOPEN=false;if(S.view==='deudas')render();}
   if(document.hidden){S.hiddenAt=Date.now();return;}
   if(S.pin&&!S.locked&&Date.now()-S.hiddenAt>60000)lock();
   render();
@@ -1784,7 +1825,7 @@ document.addEventListener('visibilitychange',function(){
 
 /* ---------- arranque ---------- */
 load();
-try{var vv=localStorage.getItem('finanzas-vista');if(VIEWS[vv])S.view=vv;}catch(e){}
+try{var vv=localStorage.getItem('finanzas-vista');if(VIEWS[vv]&&vv!=='deudas')S.view=vv;}catch(e){}
 render();
 if(S.pin)lock();
 if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
