@@ -254,6 +254,18 @@ details.more[open]>summary{margin-bottom:12px}
 
 .fab{background:var(--accent);box-shadow:0 8px 22px rgba(194,71,106,.35);width:54px;height:54px}
 .fab svg{width:24px;height:24px}
+/* Acabado 3D suave: combina con los cuchitos */
+.hero{background:linear-gradient(160deg,#FFEDEA 0%,var(--hero) 55%,#F7CFCD 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 10px 26px rgba(194,71,106,.14)}
+.meta-card,.dcard,.list,.empty{box-shadow:0 1px 0 rgba(255,255,255,.9) inset,0 2px 4px rgba(120,60,70,.05),0 12px 30px rgba(120,60,70,.10)}
+.fab{background:radial-gradient(circle at 32% 26%,#E5809F 0%,var(--accent) 48%,#A93658 100%);box-shadow:inset 0 2px 3px rgba(255,255,255,.45),inset 0 -3px 5px rgba(90,20,45,.25),0 10px 22px rgba(194,71,106,.40)}
+.btn.primary{background:linear-gradient(180deg,#D05A7B 0%,var(--accent) 55%,#B33C5F 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 6px 14px rgba(194,71,106,.28)}
+.gi{border-radius:50%;background:radial-gradient(circle at 35% 28%,#fff 0%,var(--surface-2) 70%);box-shadow:inset 0 -2px 4px rgba(194,71,106,.10),0 2px 5px rgba(120,60,70,.10)}
+.bar i{background:linear-gradient(180deg,#46A58F,var(--ok))}
+.hero .cats span,.ktile{box-shadow:0 2px 6px rgba(120,60,70,.08)}
+:root[data-theme="dark"] .hero{background:linear-gradient(160deg,#47303C 0%,var(--hero) 60%,#33212B 100%);box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 10px 26px rgba(0,0,0,.3)}
+:root[data-theme="dark"] .meta-card,:root[data-theme="dark"] .dcard,:root[data-theme="dark"] .list,:root[data-theme="dark"] .empty{box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 30px rgba(0,0,0,.35)}
+:root[data-theme="dark"] .gi{background:radial-gradient(circle at 35% 28%,#4A3541 0%,var(--surface-2) 75%);box-shadow:inset 0 -2px 4px rgba(0,0,0,.2)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{background:linear-gradient(160deg,#47303C 0%,var(--hero) 60%,#33212B 100%)}:root:not([data-theme="light"]) .gi{background:radial-gradient(circle at 35% 28%,#4A3541 0%,var(--surface-2) 75%)}}
 </style>
 </head>
 <body>
