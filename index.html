@@ -420,6 +420,7 @@ function load(){
         else if(c){c.saldo=Math.round((Number(c.saldo)+j.delta)*100)/100;c.upd=j.fecha||c.upd;}
         adone[j.id]=1;
       });
+      if(sd.dropAjeno&&!adone[sd.dropAjeno.id]){var re=new RegExp(sd.dropAjeno.re,'i');cur.ajeno=(cur.ajeno||[]).filter(function(x){return x.id===sd.dropAjeno.keep||!re.test((x.who||'')+' '+(x.note||''));});adone[sd.dropAjeno.id]=1;}
       var rc=sd.reconcile,rcDo=rc&&!adone[rc.id];
       if(rcDo)adone[rc.id]=1;
       try{localStorage.setItem('finanzas-adj',JSON.stringify(adone));}catch(e){}
