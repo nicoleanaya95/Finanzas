@@ -377,6 +377,7 @@ function load(){
         if(!cur.meses[k])cur.meses[k]=sd.meses[k];
         else cur.meses[k].paid=Object.assign({},cur.meses[k].paid,(sd.meses[k]||{}).paid);
       });
+      if(sd.reglas)cur.reglas=Object.assign({},sd.reglas,cur.reglas||{});
       if(sd.presup&&(sd.forcePresup||!cur.presup||!Object.keys(cur.presup).length))cur.presup=sd.presup;
       if(sd.plan&&(sd.forcePlan||!(cur.plan&&(cur.plan.extra||cur.plan.unico))))cur.plan=sd.plan;
       apply(cur);persist();
