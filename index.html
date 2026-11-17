@@ -1703,10 +1703,15 @@ function closeSheet(){
   document.body.style.overflow='';
   if(S.opener&&S.opener.focus&&document.contains(S.opener))S.opener.focus();
 }
+function themeGet(){try{var t=localStorage.getItem('finanzas-tema');return t==='light'||t==='dark'?t:'auto';}catch(e){return 'auto';}}
+function themeApply(){var t=themeGet(),r=document.documentElement;if(t==='auto')r.removeAttribute('data-theme');else r.setAttribute('data-theme',t);}
+themeApply();
 function optsHtml(){
+  var th=themeGet();
   return '<h2 id="sheet-title">Opciones</h2>'+
     '<p class="sub">Todo se guarda solo en este teléfono, no en internet'+(S.pin?', cifrado con tu PIN':'')+'. Haz un respaldo de vez en cuando y guárdalo en tu Drive o correo: si borras la app, cambias de teléfono o limpias los datos del navegador, lo restauras de ahí. Ojo: el archivo de respaldo no va cifrado, no lo compartas.</p>'+
     '<p><b>Alertas de pago.</b> Abre un pago y toca «Crear alerta en Calendario». Se crea un evento que se repite cada mes a las 8:00 a. m. En Google Calendar agrega notificaciones (por ejemplo 3 días y 1 día antes).</p>'+
+    '<p class="lbl" style="margin:12px 0 6px">Apariencia</p><div class="seg" role="group" aria-label="Apariencia" style="margin-bottom:12px">'+[['auto','Automático'],['light','Claro'],['dark','Oscuro']].map(function(x){return '<button type="button" data-act="theme" data-v="'+x[0]+'" aria-pressed="'+(th===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
     '<div class="actions">'+
       '<button type="button" class="btn ghost" data-act="backup">Guardar respaldo (archivo)</button>'+
       '<label class="btn ghost filebtn">Restaurar respaldo<input type="file" id="imp" accept=".json,application/json" aria-label="Elegir archivo de respaldo"></label>'+
@@ -1965,6 +1970,7 @@ document.addEventListener('click',function(e){
   else if(a==='next'){S.m++;if(S.m>11){S.m=0;S.y++;}render();}
   else if(a==='filter'){S.filter=el.dataset.v;render();}
   else if(a==='ajtoggle'){var ax=(S.ajeno||[]).find(function(x){return x.id===el.dataset.id;});if(ax){ax.done=!ax.done;persist();render();toast(ax.done?'Marcado como entregado':'Vuelve a pendiente');}}
+  else if(a==='theme'){try{localStorage.setItem('finanzas-tema',el.dataset.v);}catch(e){}themeApply();$('sheet-body').innerHTML=optsHtml();}
   else if(a==='kfilter'){S.kfilter=S.kfilter===el.dataset.v?'':el.dataset.v;render();}
   else if(a==='toggle')togglePaid(el.dataset.id);
   else if(a==='open')openSheet(el.dataset.id);
