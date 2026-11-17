@@ -1254,7 +1254,7 @@ function dashHtml(M,I){
       var libre=r2(disp-bills),nd=Math.max(1,endD-today);
       extra='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px"><div class="mini"><span>Pagos '+(nextPay?'hasta el '+nextPay:'hasta fin de mes')+'</span><b>−'+fmt(bills)+'</b></div>'+
         '<div class="mini"><span>'+(libre>=0?'Libre para '+nd+(nd===1?' día':' días'):'Te faltarían')+'</span><b style="'+(libre<0?'color:var(--late)':'')+'">'+fmt(Math.abs(libre))+'</b></div></div>'+
-        '<p class="note">'+(libre>0?'≈ <b>'+fmt(r2(libre/nd))+'</b> al día para todo lo que no sea un pago fijo. Tomá esto como guía, no como regla.':'Va a estar justo. Primero lo fijo, nada de tarjeta, y si no alcanza lo hablamos.')+'</p>';
+        '<p class="note">'+(disp===0&&bills===0?'':libre>0?'≈ <b>'+fmt(r2(libre/nd))+'</b> al día para todo lo que no sea un pago fijo. Tomá esto como guía, no como regla.':'Va a estar justo. Primero lo fijo, nada de tarjeta, y si no alcanza lo hablamos.')+'</p>';
     }
     h+='<button type="button" class="dcard" data-act="view" data-v="cuentas"><p class="ttl">Disponible ahora</p><p class="num">'+fmt(r2(disp))+'</p><p class="note" style="margin-top:4px">Lo tuyo en bancos y efectivo (efectivo '+fmt(r2(efv))+')'+(apart>0?' · apartado '+fmt(r2(apart)):'')+'</p>'+extra+'</button>';
   }
@@ -1270,7 +1270,8 @@ function dashHtml(M,I){
   /* 4. metas */
   var A=amodel();
   if(A.metas.length){
-    h+='<button type="button" class="dcard" data-act="view" data-v="ahorros"><p class="ttl">Tus metas</p>'+A.metas.slice(0,3).map(function(o){
+    var done=A.metas.some(function(o){return o.pct>=100;});
+    h+='<button type="button" class="dcard" data-act="view" data-v="ahorros">'+(done?'<img src="cuchito-feliz.png" width="64" height="64" alt="" style="float:right;margin:-6px -4px 0 8px;object-fit:contain">':'')+'<p class="ttl">'+(done?'¡Meta lograda! 🎉':'Tus metas')+'</p>'+A.metas.slice(0,3).map(function(o){
       return '<div class="cl"><span>🎯 '+esc(o.m.name)+'</span><b>'+fmt(o.s)+' <span style="font-weight:400;color:var(--ink-2)">de '+fmt(o.m.goal)+'</span></b><i><u style="width:'+o.pct+'%"></u></i></div>';}).join('')+'</button>';
   }
   return h;
