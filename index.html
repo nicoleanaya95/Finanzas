@@ -30,8 +30,8 @@
   --track:rgba(59,35,48,.10);
   --warn:#7F4A00;
   --warn-soft:#FBEBCF;
-  --late:#A8332A;
-  --late-soft:#F9DEDA;
+  --late:#B0463C;
+  --late-soft:#FBE4DE;
   --shadow:0 1px 2px rgba(120,60,70,.06),0 8px 24px rgba(120,60,70,.08);
   --scrim:rgba(10,24,20,.5);
 }
@@ -430,10 +430,10 @@ function nextLine(M){
       var when=d===0?'hoy':d===1?'mañana':'en '+d+' días';
       h+='<p class="next">Siguiente: <b>'+esc(up.p.name)+'</b>, '+when+' · '+fmt(up.amt)+'</p>';
     }
-    if(late)h+='<p class="next late">'+(late===1?'1 pago pasó':late+' pagos pasaron')+' de fecha sin marcar. Si ya lo pagaste, toca el círculo para marcarlo.</p>';
+    if(late)h+='<p class="next">'+(late===1?'Hay 1 pago por confirmar':'Hay '+late+' pagos por confirmar')+'. Si ya lo pagaste, tocá el círculo para marcarlo.</p>';
   }else if(M.past){
     var pend=M.n-M.paidN;
-    h+='<p class="next late">'+pend+(pend===1?' pago sin marcar':' pagos sin marcar')+' en este mes.</p>';
+    h+='<p class="next">'+pend+(pend===1?' pago pendiente':' pagos pendientes')+' en este mes.</p>';
   }
   return h?'<div class="nexts">'+h+'</div>':'';
 }
@@ -558,7 +558,7 @@ function renderGHero(G){
     '<p class="big">'+fmt(G.total)+'</p>'+
     '<p class="of">'+(G.n?G.n+(G.n===1?' gasto':' gastos'):'Sin gastos todavía')+(G.tarjeta>0?' · '+fmt(G.tarjeta)+' con tarjeta':'')+(G.cur&&G.today>0&&per==='mes'?' · hoy '+fmt(G.today):'')+'</p>'+
     (per==='sem'?semBlock(G,line):'<div class="split" style="display:block">'+line('Ingresos',B.ing)+line('Pagos fijos de tu bolsa',B.fijos,true)+line('Gastos de tu bolsa',B.gastos,true)+(B.ahorro?line('Apartado para ahorro',B.ahorro,true):'')+
-    '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Sobregiro':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--late)':'var(--accent)')+'">'+fmt(Math.abs(B.res))+'</b></div></div>');
+    '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Diferencia del mes':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--ink)':'var(--accent)')+'">'+(B.res<0?'−':'')+fmt(Math.abs(B.res))+'</b></div></div>');
 }
 function semBlock(G,line){
   var cap=0;Object.keys(KATS).forEach(function(k){cap+=presupFor(k,'sem');});
@@ -574,10 +574,10 @@ function presupHtml(G){
   var tp=0,tg=0;
   var rows=keys.map(function(k){
     var lim=presupFor(k,per),g=r2(G.byCat[k]||0);tp+=lim;tg+=g;
-    var pct=lim>0?Math.min(100,Math.round(g/lim*100)):100,over=r2(g-lim);
+    var pct=lim>0?Math.min(100,Math.round(g/lim*100)):100,over=lim>0?r2(g-lim):0;
     var chip=lim<=0?'<span class="chip soon">Sin presupuesto</span>':over>0.005?'<span class="chip late">Te pasaste '+fmt(over)+'</span>':'<span class="chip ok">Quedan '+fmt(-over)+'</span>';
     return '<li style="padding:10px 14px"><div class="top2" style="display:flex;justify-content:space-between;gap:12px"><span class="name" style="font-size:15px">'+kl(k)+'</span><span style="font-variant-numeric:tabular-nums;font-size:14px"><b>'+fmt(g)+'</b>'+(lim>0?' de '+fmt(lim):'')+'</span></div>'+
-      '<div class="bar" style="height:8px;margin-top:8px"><i style="width:'+pct+'%;background:'+(over>0.005?'var(--late)':pct>=80?'var(--warn)':'var(--accent)')+'"></i></div><div style="margin-top:6px">'+chip+'</div></li>';
+      '<div class="bar" style="height:8px;margin-top:8px"><i style="width:'+pct+'%;background:'+(lim<=0?'var(--track)':over>0.005?'#E8A33D':pct>=80?'#E8A33D':'var(--accent)')+'"></i></div><div style="margin-top:6px">'+chip+'</div></li>';
   }).join('');
   return '<div style="display:flex;justify-content:space-between;align-items:baseline;margin:20px 8px 8px"><p class="eyebrow" style="margin:0">Presupuesto · '+fmt(r2(tg))+' de '+fmt(r2(tp))+'</p><button type="button" class="btn ghost" data-act="presup" style="min-height:36px;padding:0 12px;font-size:13px">Editar</button></div><ul class="list">'+rows+'</ul>';
 }
@@ -591,7 +591,7 @@ function historyHtml(){
   }
   if(out.length<2)return '';
   return '<p class="eyebrow" style="margin:20px 8px 8px">Últimos meses</p><ul class="list hist" style="padding:4px 14px">'+out.map(function(o){
-    return '<li><span>'+o.lbl+'<small>gastado '+fmt(o.g)+'</small></span><span class="'+(totP&&o.d<0?'neg':'')+'">'+(totP?(o.d<0?'Sobregiro '+fmt(-o.d):'Sobró '+fmt(o.d)):'')+'</span></li>';
+    return '<li><span>'+o.lbl+'<small>gastado '+fmt(o.g)+'</small></span><span class="'+(totP&&o.d<0?'neg':'')+'">'+(totP?(o.d<0?'Faltó '+fmt(-o.d):'Sobró '+fmt(o.d)):'')+'</span></li>';
   }).join('')+'</ul>';
 }
 function renderGMain(G){
