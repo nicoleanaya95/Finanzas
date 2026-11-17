@@ -1554,11 +1554,11 @@ function dashHtml(M,I){
   return h;
 }
 var PIGI='<img src="cuchito-inicio.png" width="118" height="117" alt="" style="flex:none;object-fit:contain">';
-var PIG='<img src="cuchito.png" width="96" height="95" alt="" style="flex:none;object-fit:contain">';
+var PIG='<img src="cuchito-inicio.png" width="84" height="83" alt="" style="flex:none;object-fit:contain">';
 var AMIGO=['Paso a paso, vas bien.','Cada gasto anotado es un paso hacia tu viaje.','Ordenar tu plata también es cuidarte.','Hoy basta con anotar lo de hoy.','Lo difícil ya lo empezaste.','Las deudas se acaban; tu plan ya está en marcha.','Un día a la vez.'];
 function amigoHtml(){
   var d=new Date(),i=(d.getFullYear()*372+d.getMonth()*31+d.getDate())%AMIGO.length;
-  return '<div class="amigo" style="display:flex;align-items:center;gap:12px;margin:14px 0 0;padding:12px 14px;border-radius:16px;background:var(--hero,#E6F4EF);color:var(--ink,#16332c)">'+PIG+'<p style="margin:0;font-size:15px;line-height:1.35;font-weight:600">'+AMIGO[i]+'</p></div>';
+  return '<div class="amigo" style="display:flex;align-items:center;gap:12px;margin:14px 0 0;padding:12px 16px 12px 10px;border-radius:22px;background:var(--surface,#fff);color:var(--ink,#16332c);border:1px solid var(--line,rgba(0,0,0,.06));box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 8px 20px rgba(194,71,106,.10)">'+PIG+'<p style="margin:0;font-size:15px;line-height:1.35;font-weight:600">'+AMIGO[i]+'</p></div>';
 }
 function renderIMain(M,I){
   var C=cmodel(),h='';
