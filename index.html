@@ -280,6 +280,8 @@ details.more[open]>summary{margin-bottom:12px}
 .meta-card .bar{margin-top:16px;height:10px}
 .meta-card .sub2{margin-top:10px}
 .metas{display:grid;gap:14px}
+.qcat[aria-pressed="true"]{background:var(--hero);border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
+#qform .actions{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));background:var(--surface);padding:12px 0 calc(36px + env(safe-area-inset-bottom,0px));margin-top:12px;z-index:2;box-shadow:0 -8px 12px -8px rgba(120,60,70,.15)}
 </style>
 </head>
 <body>
@@ -695,8 +697,8 @@ function quickHtml(){
     '<div class="field"><label for="q-amt">¿Cuánto fue? ($)</label><input type="text" id="q-amt" inputmode="decimal" autocomplete="off" placeholder="0.00" style="font-size:28px;font-weight:800;height:60px"></div>'+
     '<div class="field"><label for="q-note">Descripción (opcional)</label><input type="text" id="q-note" maxlength="80" autocomplete="off" placeholder="Ej. Texaco Escalón, almuerzo con Ana"></div>'+
     '<div class="two"><div class="field"><label for="q-date">Fecha</label><input type="date" id="q-date" value="'+todayStr()+'" max="'+todayStr()+'"></div>'+srcField(last,'q-src')+'</div>'+ajField('q-aj','')+
-    '<p class="lbl" style="margin:4px 0 8px">Tocá la categoría para guardar</p>'+
-    '<div class="qgrid">'+ks.map(function(k){return '<button type="button" class="qcat" data-act="qcat" data-k="'+k+'"><span class="gi" aria-hidden="true">'+(KEM[k]||'✨')+'</span><span>'+esc(KATS[k])+'</span></button>';}).join('')+'</div>'+
+    '<p class="lbl" style="margin:4px 0 8px">Elegí la categoría y tocá Guardar</p>'+
+    '<div class="qgrid">'+ks.map(function(k){return '<button type="button" class="qcat" aria-pressed="false" data-act="qcat" data-k="'+k+'"><span class="gi" aria-hidden="true">'+(KEM[k]||'✨')+'</span><span>'+esc(KATS[k])+'</span></button>';}).join('')+'</div>'+
     '<p class="err" id="q-err" role="alert" hidden></p>'+
     '<div class="actions" style="margin-top:12px"><button type="submit" class="btn primary">Guardar</button><button type="button" class="btn ghost" data-act="close">Cancelar</button></div></form>';
 }
@@ -1782,7 +1784,7 @@ function openSheet(id,kind){
   else if(id==='scan')body.innerHTML=scanSheet();
   else if(id==='transf')body.innerHTML=transfForm(kind==='cash');
   else if(id==='presup')body.innerHTML=presupForm();
-  else if(id==='quick'){body.innerHTML=quickHtml();setTimeout(function(){var q=$('q-amt');if(q)q.focus();},50);}
+  else if(id==='quick'){S.qk='';body.innerHTML=quickHtml();setTimeout(function(){var q=$('q-amt');if(q)q.focus();},50);}
   else if(id==='paysrc')body.innerHTML=paySrcHtml();
   else if(id==='reglas')body.innerHTML=reglasHtml();
   else if(id==='resumen')body.innerHTML=resumenHtml();
@@ -2105,7 +2107,7 @@ document.addEventListener('click',function(e){
   else if(a==='vlock'){VOPEN=false;S.view='cuentas';render();window.scrollTo(0,0);}
   else if(a==='scan')openSheet('scan');
   else if(a==='qadd')openSheet('quick');
-  else if(a==='qcat')quickSave(el.dataset.k);
+  else if(a==='qcat'){S.qk=el.dataset.k;document.querySelectorAll('.qcat').forEach(function(b){b.setAttribute('aria-pressed',b===el?'true':'false');});}
   else if(a==='qmore'){var qa=num(($('q-amt')||{}).value||''),qn=($('q-note')||{}).value||'';closeSheet();S.prefillG={amount:qa>0?String(qa):'',note:qn,cat:ruleFor(qn)||'otro',date:todayStr()};openSheet('new','g');}
   else if(a==='presup')openSheet('presup');
   else if(a==='reglas'){closeSheet();openSheet('reglas');}
@@ -2133,7 +2135,7 @@ document.addEventListener('submit',function(e){
   var id=e.target.id;
   if(id==='pform')submitForm(e);
   else if(id==='gform')submitGasto(e);
-  else if(id==='qform'){e.preventDefault();quickSave('');}
+  else if(id==='qform'){e.preventDefault();quickSave(S.qk||'');}
   else if(id==='mform')submitMeta(e);
   else if(id==='vform')submitMov(e);
   else if(id==='pinform')submitPin(e);
