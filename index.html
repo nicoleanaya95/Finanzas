@@ -1259,9 +1259,9 @@ function dashHtml(M,I){
   var G=gmodel(M,'mes'),bud=0;
   Object.keys(S.presup||{}).forEach(function(k){bud+=Number(S.presup[k])||0;});
   if(bud>0||G.total>0){
-    var pct=bud>0?Math.round(G.total/bud*100):0,col=pct>85?'var(--warn)':'var(--accent)';
+    var pct=bud>0?Math.round(G.total/bud*100):0,col=pct>85?'#E8A33D':'var(--accent)';
     var tops=G.cats.slice(0,3).map(function(o){var b=Number((S.presup||{})[o.k])||0,w=b>0?Math.min(100,Math.round(o.v/b*100)):100;
-      return '<div class="cl"><span>'+kl(o.k)+'</span><b>'+fmt(o.v)+(b>0?' <span style="font-weight:400;color:var(--ink-2)">de '+fmt(b)+'</span>':'')+'</b><i><u style="width:'+w+'%;'+(b>0&&o.v>b?'background:var(--warn)':'')+'"></u></i></div>';}).join('');
+      return '<div class="cl"><span>'+kl(o.k)+'</span><b>'+fmt(o.v)+(b>0?' <span style="font-weight:400;color:var(--ink-2)">de '+fmt(b)+'</span>':'')+'</b><i><u style="width:'+w+'%;'+(b>0&&o.v>b?'background:#E8A33D':'')+'"></u></i></div>';}).join('');
     h+='<button type="button" class="dcard" data-act="view" data-v="gastos"><p class="ttl">Tus gastos de '+MONTHS[S.m]+'</p><div class="row3">'+(bud>0?ringSvg(pct,col,pct+'%','del plan'):'')+'<div style="flex:1;min-width:0"><p class="num" style="font-size:28px">'+fmt(G.total)+'</p><p class="note" style="margin:2px 0 0">'+(bud>0?'de '+fmt(r2(bud))+' presupuestados':'sin presupuesto aún')+'</p></div></div>'+(tops?'<div style="margin-top:14px">'+tops+'</div>':'')+'</button>';
   }
   /* 3. deudas */
@@ -1283,7 +1283,7 @@ function dashHtml(M,I){
   }
   return h;
 }
-var PIG='<svg viewBox="0 0 120 90" width="76" height="58" aria-hidden="true" focusable="false"><g fill="none" stroke="#8a4b5c" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="62" cy="14" r="9" fill="#F7D774"/><path d="M62 10v8M58 14h8" stroke="#b08a1e" stroke-width="2.4"/><ellipse cx="58" cy="54" rx="38" ry="26" fill="#F6B1C3"/><path d="M30 36l-6-12 14 6" fill="#F6B1C3"/><path d="M84 52c7 0 12 3 12 8s-5 8-12 8" fill="#F6B1C3"/><path d="M42 76v8M74 76v8"/><circle cx="46" cy="48" r="2.4" fill="#8a4b5c"/><path d="M52 28h22" /></g></svg>';
+var PIG='<svg viewBox="0 0 120 90" width="76" height="58" aria-hidden="true" focusable="false"><g stroke="#8a4b5c" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="58" cy="13" r="9" fill="#F7D774" stroke="#b08a1e"/><text x="58" y="17.5" font-size="12" font-weight="700" text-anchor="middle" fill="#8a6a10" stroke="none" font-family="sans-serif">$</text><rect x="36" y="70" width="11" height="15" rx="5" fill="#F4A3B8"/><rect x="51" y="72" width="11" height="13" rx="5" fill="#F4A3B8"/><rect x="72" y="72" width="11" height="13" rx="5" fill="#F4A3B8"/><rect x="86" y="70" width="11" height="15" rx="5" fill="#F4A3B8"/><path d="M26 50c-9-3-10-13-3-13 5 0 4 7-1 6" fill="none"/><ellipse cx="62" cy="52" rx="38" ry="26" fill="#F8B4C4"/><path d="M78 33Q80 15 93 19Q93 30 89 37Z" fill="#F4A3B8"/><ellipse cx="97" cy="55" rx="9" ry="7.5" fill="#F39AB0"/><circle cx="94.5" cy="55" r="1.4" fill="#8a4b5c" stroke="none"/><circle cx="99.5" cy="55" r="1.4" fill="#8a4b5c" stroke="none"/><circle cx="84" cy="46" r="2.8" fill="#8a4b5c" stroke="none"/><circle cx="82" cy="57" r="4.2" fill="#F27A9B" stroke="none" opacity=".45"/><path d="M52 29h20" fill="none"/></g></svg>';
 var AMIGO=['Paso a paso, vas bien.','Cada gasto anotado es un paso hacia tu viaje.','Ordenar tu plata también es cuidarte.','Hoy basta con anotar lo de hoy.','Lo difícil ya lo empezaste.','Las deudas se acaban; tu plan ya está en marcha.','Un día a la vez.'];
 function amigoHtml(){
   var d=new Date(),i=(d.getFullYear()*372+d.getMonth()*31+d.getDate())%AMIGO.length;
