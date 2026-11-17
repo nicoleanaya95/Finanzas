@@ -419,8 +419,19 @@ function load(){
         if(c){c.saldo=Math.round((Number(c.saldo)+j.delta)*100)/100;c.upd=j.fecha||c.upd;}
         adone[j.id]=1;
       });
+      var rc=sd.reconcile,rcDo=rc&&!adone[rc.id];
+      if(rcDo)adone[rc.id]=1;
       try{localStorage.setItem('finanzas-adj',JSON.stringify(adone));}catch(e){}
-      apply(cur);persist();
+      apply(cur);
+      if(rcDo){
+        var seedIds={};(sd.gastos||[]).forEach(function(g){seedIds[g.id]=1;});
+        S.gastos.forEach(function(g){
+          if(seedIds[g.id]||!g.ap||g.t<rc.tmin||g.t>rc.tmax)return;
+          gEffect(g,1);
+          if(/\bLT\b|luis/i.test(g.note||'')&&g.ap.cuenta==='c_bac_ah'){var cc=S.cuentas.find(function(x){return x.id==='c_bac_ah';});if(cc)cc.apart=Math.max(0,Math.round(((cc.apart||0)-g.amount)*100)/100);}
+        });
+      }
+      persist();
       try{localStorage.setItem('finanzas-seed-v',String(sd.v||1));}catch(e){}
     }
   }
