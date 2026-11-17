@@ -902,8 +902,9 @@ function renderAHero(A){
     '<div class="split"><div><span>Apartado en '+MONTHS[S.m]+'</span><b>'+fmt(A.mes)+'</b></div><div><span>Para llegar a tus metas</span><b>'+(A.sugerido>0?fmt(A.sugerido)+'/mes':'—')+'</b></div></div>';
 }
 function metaIcon(n){
+  var I={viaje:'<img src="cuchito-viaje.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">',carro:'<img src="cuchito-carro.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">',mascota:'<img src="cuchito-mascota.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">',emergencia:'<img src="cuchito-emergencia.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">',generica:'<img src="cuchito-generica.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">'};
   var f=/viaje|concierto|vacaci|guate|paseo/i.test(n)?'viaje':/llanta|aceite|carro|mantenimiento/i.test(n)?'carro':/totto|vacuna|vet|mascota/i.test(n)?'mascota':/emergencia/i.test(n)?'emergencia':'generica';
-  return '<img src="cuchito-'+f+'.png" width="42" height="31" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">';
+  return I[f];
 }
 function renderAMain(A){
   var el=$('main');
