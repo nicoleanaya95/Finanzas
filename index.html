@@ -266,6 +266,7 @@ details.more[open]>summary{margin-bottom:12px}
 :root[data-theme="dark"] .meta-card,:root[data-theme="dark"] .dcard,:root[data-theme="dark"] .list,:root[data-theme="dark"] .empty{box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 12px 30px rgba(0,0,0,.35)}
 :root[data-theme="dark"] .gi{background:radial-gradient(circle at 35% 28%,#4A3541 0%,var(--surface-2) 75%);box-shadow:inset 0 -2px 4px rgba(0,0,0,.2)}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .hero{background:linear-gradient(160deg,#47303C 0%,var(--hero) 60%,#33212B 100%)}:root:not([data-theme="light"]) .gi{background:radial-gradient(circle at 35% 28%,#4A3541 0%,var(--surface-2) 75%)}}
+.empty[style*="--nopig"]::before{display:none}
 </style>
 </head>
 <body>
@@ -494,7 +495,7 @@ function renderHero(M){
   $('hero').innerHTML=navHtml()+
     '<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow">Falta por pagar</p>'+
     '<p class="big">'+fmt(M.left)+'</p>'+
-    '<p class="of">de '+fmt(M.total)+' este mes</p></div><img src="cuchito-pagos.png" width="92" height="94" alt="" style="flex:none;object-fit:contain"></div>'+
+    '<p class="of">de '+fmt(M.total)+' este mes</p></div><img src="cuchito-pagos.png" width="92" height="79" alt="" style="flex:none;object-fit:contain"></div>'+
     '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" aria-label="Avance de pagos"><i style="width:'+pct+'%"></i></div>'+
     '<div class="barmeta"><span>Pagado <b>'+fmt(M.paidSum)+'</b></span><span><b>'+M.paidN+'</b> de '+M.n+' pagos</span></div>'+
     '<details style="margin-top:8px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center">Por quincena y avisos</summary><div class="split"><div><span>Del 1 al 15</span><b>'+fmt(M.q1)+'</b></div><div><span>Del 16 al fin de mes</span><b>'+fmt(M.q2)+'</b></div></div>'+nextLine(M)+'</details>';
@@ -608,7 +609,7 @@ function renderGHero(G){
   $('hero').innerHTML=navHtml()+seg+
     '<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow">Gastado en '+lbl+'</p>'+
     '<p class="big">'+fmt(G.total)+'</p>'+
-    '<p class="of">'+(G.n?G.n+(G.n===1?' gasto':' gastos'):'Sin gastos todavía')+(G.tarjeta>0?' · '+fmt(G.tarjeta)+' con tarjeta':'')+(G.cur&&G.today>0&&per==='mes'?' · hoy '+fmt(G.today):'')+'</p></div><img src="cuchito-gastos.png" width="92" height="84" alt="" style="flex:none;object-fit:contain"></div>'+
+    '<p class="of">'+(G.n?G.n+(G.n===1?' gasto':' gastos'):'Sin gastos todavía')+(G.tarjeta>0?' · '+fmt(G.tarjeta)+' con tarjeta':'')+(G.cur&&G.today>0&&per==='mes'?' · hoy '+fmt(G.today):'')+'</p></div><img src="cuchito-gastos.png" width="92" height="80" alt="" style="flex:none;object-fit:contain"></div>'+
     (per==='sem'?semBlock(G,line):'<details style="margin-top:12px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center">Ver cuentas del mes</summary><div class="split" style="display:block">'+line('Ingresos',B.ing)+line('Pagos fijos de tu bolsa',B.fijos,true)+line('Gastos de tu bolsa',B.gastos,true)+(B.ahorro?line('Apartado para ahorro',B.ahorro,true):'')+
     '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Diferencia del mes':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--ink)':'var(--ok)')+'">'+(B.res<0?'−':'')+fmt(Math.abs(B.res))+'</b></div></div></details>');
 }
@@ -786,7 +787,7 @@ function parseTicket(text){
   return {amount:amount?r2(amount):'',date:date,note:merch,cat:cat};
 }
 function scanSheet(){
-  return '<img src="cuchito-escaneo.png" width="92" height="85" alt="" style="float:right;margin:-4px 0 4px 8px;object-fit:contain"><h2 id="sheet-title">Escanear ticket</h2><p class="sub">Tomá una foto del ticket o elegí una captura. La lectura se hace en tu teléfono: la imagen no sale de él. Siempre vas a poder revisar los datos antes de guardar.</p>'+
+  return '<img src="cuchito-escaneo.png" width="92" height="80" alt="" style="float:right;margin:-4px 0 4px 8px;object-fit:contain"><h2 id="sheet-title">Escanear ticket</h2><p class="sub">Tomá una foto del ticket o elegí una captura. La lectura se hace en tu teléfono: la imagen no sale de él. Siempre vas a poder revisar los datos antes de guardar.</p>'+
     '<div class="field"><label for="scan-file">Foto o captura</label><input type="file" id="scan-file" accept="image/*"></div>'+
     '<p id="scan-status" class="sub" role="status" aria-live="polite"></p>'+
     '<div class="actions"><button type="button" class="btn ghost" data-act="close">Cancelar</button></div>';
@@ -897,7 +898,7 @@ function renderAHero(A){
   $('hero').innerHTML=navHtml()+
     '<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow">Total ahorrado</p>'+
     '<p class="big">'+fmt(A.total)+'</p>'+
-    '<p class="of">'+(A.metas.length?A.metas.length+(A.metas.length===1?' meta':' metas'):'Sin metas todavía')+'</p></div><img src="cuchito-ahorros.png" width="96" height="91" alt="" style="flex:none;object-fit:contain"></div>'+
+    '<p class="of">'+(A.metas.length?A.metas.length+(A.metas.length===1?' meta':' metas'):'Sin metas todavía')+'</p></div><img src="cuchito-ahorros.png" width="96" height="84" alt="" style="flex:none;object-fit:contain"></div>'+
     '<div class="split"><div><span>Apartado en '+MONTHS[S.m]+'</span><b>'+fmt(A.mes)+'</b></div><div><span>Para llegar a tus metas</span><b>'+(A.sugerido>0?fmt(A.sugerido)+'/mes':'—')+'</b></div></div>';
 }
 function renderAMain(A){
@@ -915,7 +916,7 @@ function renderAMain(A){
     var by=m.by?(function(){var p=m.by.split('-');return MON[+p[1]-1]+' '+p[0];})():'';
     var cta=S.cuentas.find(function(c){return c.id===m.cuenta;});
     return '<button type="button" class="meta-card'+(m.goal>0&&x.falta<=0?' done':'')+'" data-act="aopen" data-id="'+esc(m.id)+'">'+
-      '<span class="top2"><span class="name">'+(/viaje|concierto|vacaci|guate|paseo/i.test(m.name)?'<img src="cuchito-viaje.png" width="40" height="34" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">':'')+esc(m.name)+(cta?' <span class="chip">'+esc(cta.name)+'</span>':'')+'</span><span class="amt">'+fmt(x.s)+'</span></span>'+
+      '<span class="top2"><span class="name">'+(/viaje|concierto|vacaci|guate|paseo/i.test(m.name)?'<img src="cuchito-viaje.png" width="40" height="32" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">':'')+esc(m.name)+(cta?' <span class="chip">'+esc(cta.name)+'</span>':'')+'</span><span class="amt">'+fmt(x.s)+'</span></span>'+
       (m.goal>0?'<span class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+x.pct+'" aria-label="Avance de '+esc(m.name)+'"><i style="width:'+x.pct+'%"></i></span>':'')+
       '<span class="sub2">'+sub+'<span>'+(m.goal>0?x.pct+'% de '+fmt(m.goal):'')+(by?' · '+by:'')+'</span></span>'+
     '</button>';
@@ -1020,13 +1021,13 @@ function renderCHero(C,full){
   if(!full){
     $('hero').innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow" style="margin-top:4px">Lo que tengo</p>'+
       '<p class="big">'+fmt(C.activos)+'</p>'+
-      '<p class="of">En bancos, efectivo y ahorros</p></div><img src="cuchito-cuentas.png" width="92" height="81" alt="" style="flex:none;object-fit:contain"></div>'+
+      '<p class="of">En bancos, efectivo y ahorros</p></div><img src="cuchito-cuentas.png" width="92" height="80" alt="" style="flex:none;object-fit:contain"></div>'+
       (Object.keys(C.byType).length?'<div class="cats">'+Object.keys(CTYPES).filter(function(k){return C.byType[k]!=null&&!isDebt(k);}).map(function(k){return '<span>'+CTYPES[k]+' '+fmt(r2(C.byType[k]))+'</span>';}).join('')+'</div>':'');
     return;
   }
   $('hero').innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow" style="margin-top:4px">Patrimonio neto</p>'+
     '<p class="big" style="font-size:34px">'+fmt(C.neto)+'</p>'+
-    '<p class="of">Lo que tienes menos lo que debes</p></div><img src="cuchito-deudas.png" width="92" height="85" alt="" style="flex:none;object-fit:contain"></div>'+
+    '<p class="of">Lo que tienes menos lo que debes</p></div><img src="cuchito-deudas.png" width="92" height="79" alt="" style="flex:none;object-fit:contain"></div>'+
     '<div class="split"><div><span>Tengo</span><b>'+fmt(C.activos)+'</b></div><div><span>Debo</span><b>'+fmt(C.deudas)+'</b></div></div>'+
     (Object.keys(C.byType).length?'<div class="cats">'+Object.keys(CTYPES).filter(function(k){return C.byType[k]!=null;}).map(function(k){return '<span>'+CTYPES[k]+' '+fmt(r2(C.byType[k]))+'</span>';}).join('')+'</div>':'');
 }
@@ -1208,7 +1209,7 @@ function resumenHtml(){
   var A=monthCats(y,m),B=monthCats(py,pm),bud=0;
   Object.keys(S.presup||{}).forEach(function(k){bud+=Number(S.presup[k])||0;});
   var d=r2(A.total-B.total);
-  var h='<h2 id="sheet-title">Resumen de '+MONTHS[m]+'</h2>';
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><h2 id="sheet-title" style="margin:0">Resumen de '+MONTHS[m]+'</h2><img src="cuchito-resumen.png" width="64" height="57" alt="" style="flex:none;object-fit:contain"></div>';
   h+='<div class="hero" style="margin:0 0 16px"><p class="eyebrow" style="margin-top:0">Gastaste</p><p class="big" style="font-size:34px">'+fmt(A.total)+'</p><p class="of">'+(B.total?(d>0?'Subió ':'Bajó ')+fmt(Math.abs(d))+' contra '+MONTHS[pm]+' ('+fmt(B.total)+')':'Sin datos de '+MONTHS[pm]+' para comparar')+(bud>0?' · presupuesto '+fmt(r2(bud)):'')+'</p></div>';
   var ks=Object.keys(A.by).sort(function(a,b){return A.by[b]-A.by[a];});
   if(!ks.length)h+='<p class="sub">Todavía no hay gastos este mes.</p>';
@@ -1226,7 +1227,7 @@ function backupBanner(){
   var last=0;try{last=+localStorage.getItem('finanzas-ult-respaldo')||0;}catch(x){}
   var days=last?Math.floor((Date.now()-last)/864e5):999;
   if(days<7)return '';
-  return '<button type="button" class="dcard" data-act="backup" style="display:flex;align-items:center;gap:12px;margin-top:14px"><span style="font-size:24px" aria-hidden="true">💾</span><span><b>'+(last?'Hace '+days+' días que no hacés respaldo':'Todavía no has hecho un respaldo')+'</b><br><span class="note" style="margin:0">Tus datos viven solo en este teléfono. Tocá para guardarlo.</span></span></button>';
+  return '<button type="button" class="dcard" data-act="backup" style="display:flex;align-items:center;gap:12px;margin-top:14px"><img src="cuchito-respaldo.png" width="56" height="47" alt="" style="flex:none;object-fit:contain"><span><b>'+(last?'Hace '+days+' días que no hacés respaldo':'Todavía no has hecho un respaldo')+'</b><br><span class="note" style="margin:0">Tus datos viven solo en este teléfono. Tocá para guardarlo.</span></span></button>';
 }
 function dueBanner(M){
   if(!M.cur)return '';
@@ -1234,7 +1235,7 @@ function dueBanner(M){
   var it=M.all.filter(function(x){return !x.paid&&(x.due===t||x.due===t+1);});
   if(!it.length)return '';
   var tot=r2(it.reduce(function(s,x){return s+x.amt;},0));
-  return '<button type="button" class="dcard" data-act="view" data-v="fijos" style="display:flex;align-items:center;gap:12px;margin-top:14px"><img src="cuchito-recordatorio.png" width="56" height="52" alt="" style="flex:none;object-fit:contain"><span><b>Pagos de hoy y mañana · '+fmt(tot)+'</b><br><span class="note" style="margin:0">'+it.map(function(x){return esc(x.p.name);}).slice(0,4).join(', ')+'</span></span></button>';
+  return '<button type="button" class="dcard" data-act="view" data-v="fijos" style="display:flex;align-items:center;gap:12px;margin-top:14px"><img src="cuchito-recordatorio.png" width="56" height="47" alt="" style="flex:none;object-fit:contain"><span><b>Pagos de hoy y mañana · '+fmt(tot)+'</b><br><span class="note" style="margin:0">'+it.map(function(x){return esc(x.p.name);}).slice(0,4).join(', ')+'</span></span></button>';
 }
 function ahorroSim(D,P,base){
   var rows=[25,50,100].map(function(x){
@@ -1326,7 +1327,7 @@ function ajenoHtml(){
   var A=S.ajeno||[];if(!A.length)return '';
   var pen=A.filter(function(a){return !a.done;}),don=A.filter(function(a){return a.done;});
   var row=function(a){return '<li class="row'+(a.done?' is-paid':'')+'"><div class="row-main" style="cursor:default"><span class="gi" aria-hidden="true">🤝</span><span class="info"><span class="name">'+esc(a.who)+'</span><span class="meta1">'+(a.note?esc(a.note)+' · ':'')+'desde '+esc(a.date.slice(8)+'/'+a.date.slice(5,7))+'</span></span><span class="amt">'+fmt(a.amount)+'</span></div><button type="button" class="check" data-act="ajtoggle" data-id="'+esc(a.id)+'" aria-pressed="'+a.done+'" aria-label="'+(a.done?'Volver a marcar como pendiente: ':'Marcar como entregado: ')+esc(a.who)+'">'+ICON.check+'</button></li>';};
-  return '<p class="eyebrow" style="margin:20px 8px 8px">Dinero de otras personas · '+fmt(heldSum())+'</p>'+
+  return '<div style="display:flex;align-items:center;justify-content:space-between;margin:20px 8px 8px"><p class="eyebrow" style="margin:0">Dinero de otras personas · '+fmt(heldSum())+'</p><img src="cuchito-ajeno.png" width="52" height="45" alt="" style="flex:none;object-fit:contain"></div>'+
     (pen.length?'<ul class="list">'+pen.map(row).join('')+'</ul><p class="note" style="margin:6px 8px 0">No cuenta como tuyo: ya está restado de tu Disponible. Tocá el círculo cuando lo entregues o lo pagués.</p>':'<p class="note" style="margin:0 8px">Nada pendiente de entregar.</p>')+
     (don.length?'<details style="margin-top:8px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center;padding:0 8px">Ya entregado ('+don.length+')</summary><ul class="list">'+don.map(row).join('')+'</ul></details>':'');
 }
@@ -1476,12 +1477,12 @@ function dashHtml(M,I){
   var A=amodel();
   if(A.metas.length){
     var done=A.metas.some(function(o){return o.pct>=100;});
-    h+='<button type="button" class="dcard" data-act="view" data-v="ahorros">'+(done?'<img src="cuchito-feliz.png" width="72" height="71" alt="" style="float:right;margin:-6px -4px 0 8px;object-fit:contain">':'')+'<p class="ttl">'+(done?'¡Meta lograda! 🎉':'Tus metas')+'</p>'+A.metas.slice(0,3).map(function(o){
+    h+='<button type="button" class="dcard" data-act="view" data-v="ahorros">'+(done?'<img src="cuchito-feliz.png" width="72" height="60" alt="" style="float:right;margin:-6px -4px 0 8px;object-fit:contain">':'')+'<p class="ttl">'+(done?'¡Meta lograda! 🎉':'Tus metas')+'</p>'+A.metas.slice(0,3).map(function(o){
       return '<div class="cl"><span>🎯 '+esc(o.m.name)+'</span><b>'+fmt(o.s)+' <span style="font-weight:400;color:var(--ink-2)">de '+fmt(o.m.goal)+'</span></b><i><u style="width:'+o.pct+'%"></u></i></div>';}).join('')+'</button>';
   }
   return h;
 }
-var PIGI='<img src="cuchito-inicio.png" width="118" height="92" alt="" style="flex:none;object-fit:contain">';
+var PIGI='<img src="cuchito-inicio.png" width="118" height="117" alt="" style="flex:none;object-fit:contain">';
 var PIG='<img src="cuchito.png" width="96" height="95" alt="" style="flex:none;object-fit:contain">';
 var AMIGO=['Paso a paso, vas bien.','Cada gasto anotado es un paso hacia tu viaje.','Ordenar tu plata también es cuidarte.','Hoy basta con anotar lo de hoy.','Lo difícil ya lo empezaste.','Las deudas se acaban; tu plan ya está en marcha.','Un día a la vez.'];
 function amigoHtml(){
@@ -1577,7 +1578,7 @@ var VIEWS={inicio:'Agregar ingreso',fijos:'Agregar pago',gastos:'Agregar gasto',
 var VKEY='finanzas-app-vault',VOPEN=false;
 function vaultCfg(){try{return JSON.parse(localStorage.getItem(VKEY)||'null');}catch(e){return null;}}
 function vaultForm(cfg){
-  return '<form id="dvform" novalidate style="margin-top:12px"><img src="cuchito-candado.png" width="120" height="123" alt="" style="display:block;margin:0 auto 8px">'+
+  return '<form id="dvform" novalidate style="margin-top:12px"><img src="cuchito-candado.png" width="120" height="103" alt="" style="display:block;margin:0 auto 8px">'+
     (cfg?'<div class="field"><label for="v-pin">PIN de deudas</label><input type="password" id="v-pin" inputmode="numeric" maxlength="6" autocomplete="off"></div>'
         :'<p class="sub">Este PIN es solo para ver tus deudas. No es el de la app y no cifra tus datos: sirve para que no queden a la vista.</p><div style="display:block"><div class="field"><label for="v-new">PIN nuevo (4 a 6 números)</label><input type="password" id="v-new" inputmode="numeric" maxlength="6" autocomplete="off"></div><div class="field"><label for="v-rep">Repetilo</label><input type="password" id="v-rep" inputmode="numeric" maxlength="6" autocomplete="off"></div></div>')+
     '<p class="err" id="v-err" role="alert" hidden></p>'+
@@ -1617,7 +1618,7 @@ function renderDeudas(){
     h+='<button type="button" class="meta-card" data-act="plan" style="margin-top:20px"><span class="top2"><span class="name">Plan para salir de deudas</span><span class="amt">'+(pl&&!pl.stuck?mesTxt(pl.meses):'—')+'</span></span><span class="sub2"><span>'+(pl&&!pl.stuck?'Libre de deudas en '+durTxt(pl.meses):'Revisa cuotas y tasas')+'</span><span>Ver plan</span></span></button>';
     if(pl&&!pl.stuck){var b0=pl;h+=ahorroSim(D,S.plan,b0);}
     h+='<p class="eyebrow" style="margin:20px 8px 8px">Lo que debo · '+fmt(C.deudas)+'</p><ul class="list">'+C.deu.map(cRow).join('')+'</ul>';
-  }else h+='<div class="empty"><h3>Sin deudas registradas</h3><p>Cuando agregues tarjetas o préstamos en Cuentas, aparecen aquí.</p></div>';
+  }else h+='<div class="empty" style="--nopig:1"><img src="cuchito-pagada.png" width="120" height="99" alt="" style="display:block;margin:0 auto 6px"><h3>Sin deudas registradas</h3><p>Cuando agregues tarjetas o préstamos en Cuentas, aparecen aquí.</p></div>';
   h+='<div class="actions" style="margin-top:16px"><button type="button" class="btn primary" data-act="vlock">Bloquear y volver</button></div>';
   $('main').innerHTML=h;
 }
