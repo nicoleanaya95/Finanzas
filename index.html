@@ -480,9 +480,9 @@ function navHtml(){
 function renderHero(M){
   var pct=M.total>0?Math.round(M.paidSum/M.total*100):0;
   $('hero').innerHTML=navHtml()+
-    '<p class="eyebrow">Falta por pagar</p>'+
+    '<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow">Falta por pagar</p>'+
     '<p class="big">'+fmt(M.left)+'</p>'+
-    '<p class="of">de '+fmt(M.total)+' este mes</p>'+
+    '<p class="of">de '+fmt(M.total)+' este mes</p></div><img src="cuchito-pagos.png" width="92" height="94" alt="" style="flex:none;object-fit:contain"></div>'+
     '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'" aria-label="Avance de pagos"><i style="width:'+pct+'%"></i></div>'+
     '<div class="barmeta"><span>Pagado <b>'+fmt(M.paidSum)+'</b></span><span><b>'+M.paidN+'</b> de '+M.n+' pagos</span></div>'+
     '<details style="margin-top:8px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center">Por quincena y avisos</summary><div class="split"><div><span>Del 1 al 15</span><b>'+fmt(M.q1)+'</b></div><div><span>Del 16 al fin de mes</span><b>'+fmt(M.q2)+'</b></div></div>'+nextLine(M)+'</details>';
