@@ -21,9 +21,9 @@
   --ink:#3B2330;
   --ink-2:#7A5A66;
   --line:#F1DCD6;
-  --accent:#2B8470;
+  --accent:#C2476A;--ok:#2B8470;--ok-soft:#DDF1EA;
   --on-accent:#FFFFFF;
-  --accent-soft:#DDF1EA;
+  --accent-soft:#FBDDE3;
   --hero:#FCE2DE;
   --hero-btn:rgba(255,255,255,.62);
   --hero-line:rgba(59,35,48,.12);
@@ -38,7 +38,7 @@
 @media (prefers-color-scheme:dark){
   :root:not([data-theme="light"]){
     --bg:#1D1519;--surface:#2A1E24;--surface-2:#36272E;--ink:#F7EBEE;--ink-2:#C3A8B1;--line:#44323A;
-    --accent:#6FD1B5;--on-accent:#0E2A22;--accent-soft:#23423A;--hero:#3B2631;--hero-btn:rgba(255,255,255,.09);
+    --accent:#F08CA8;--ok:#6FD1B5;--ok-soft:#23423A;--on-accent:#3B1220;--accent-soft:#4D2A38;--hero:#3B2631;--hero-btn:rgba(255,255,255,.09);
     --hero-line:rgba(247,235,238,.16);--track:rgba(247,235,238,.15);--warn:#E9B25A;--warn-soft:#3A2B12;
     --late:#F29A8F;--late-soft:#4A2626;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);--scrim:rgba(0,0,0,.6);
     color-scheme:dark;
@@ -46,7 +46,7 @@
 }
 :root[data-theme="dark"]{
   --bg:#1D1519;--surface:#2A1E24;--surface-2:#36272E;--ink:#F7EBEE;--ink-2:#C3A8B1;--line:#44323A;
-  --accent:#6FD1B5;--on-accent:#0E2A22;--accent-soft:#23423A;--hero:#3B2631;--hero-btn:rgba(255,255,255,.09);
+  --accent:#F08CA8;--ok:#6FD1B5;--ok-soft:#23423A;--on-accent:#3B1220;--accent-soft:#4D2A38;--hero:#3B2631;--hero-btn:rgba(255,255,255,.09);
   --hero-line:rgba(247,235,238,.16);--track:rgba(247,235,238,.15);--warn:#E9B25A;--warn-soft:#3A2B12;
   --late:#F29A8F;--late-soft:#4A2626;--shadow:0 1px 2px rgba(0,0,0,.4),0 8px 24px rgba(0,0,0,.3);--scrim:rgba(0,0,0,.6);
   color-scheme:dark;
@@ -75,7 +75,7 @@ button{cursor:pointer}
 .big{font-family:var(--font-display);font-weight:700;font-size:clamp(40px,12vw,52px);line-height:1.02;letter-spacing:-.01em;margin:2px 0 0;font-variant-numeric:tabular-nums}
 .of{color:var(--ink-2);margin:4px 0 0;font-size:15px}
 .bar{height:10px;border-radius:999px;background:var(--track);margin-top:16px;overflow:hidden}
-.bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .4s ease}
+.bar i{display:block;height:100%;background:var(--ok);border-radius:999px;transition:width .4s ease}
 .barmeta{display:flex;justify-content:space-between;gap:12px;margin-top:8px;font-size:14px;color:var(--ink-2);font-variant-numeric:tabular-nums}
 .barmeta b{color:var(--ink);font-weight:600}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;padding-top:14px;border-top:1px solid var(--hero-line)}
@@ -108,8 +108,8 @@ button{cursor:pointer}
 .date{width:48px;height:52px;border-radius:14px;background:var(--surface-2);display:grid;place-content:center;justify-items:center;line-height:1;gap:3px}
 .date b{font-family:var(--font-display);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums}
 .date em{font-style:normal;font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-2)}
-.is-paid .date{background:var(--accent-soft)}
-.is-paid .date b{color:var(--accent)}
+.is-paid .date{background:var(--ok-soft)}
+.is-paid .date b{color:var(--ok)}
 .info{display:grid;gap:3px;min-width:0}
 .name{font-weight:600;font-size:16px;overflow-wrap:anywhere}
 .meta{display:flex;flex-wrap:wrap;align-items:center;gap:4px 6px;font-size:13px;color:var(--ink-2)}
@@ -117,7 +117,7 @@ button{cursor:pointer}
 .is-paid .name{text-decoration:line-through;text-decoration-color:var(--ink-2);color:var(--ink-2)}
 .is-paid .amt{color:var(--ink-2)}
 .chip{display:inline-block;font-size:12px;font-weight:600;line-height:1;padding:4px 8px;border-radius:999px;background:var(--surface-2);color:var(--ink-2)}
-.chip.ok{background:var(--accent-soft);color:var(--accent)}
+.chip.ok{background:var(--ok-soft);color:var(--ok)}
 .chip.late{background:var(--late-soft);color:var(--late)}
 .chip.soon{background:var(--warn-soft);color:var(--warn)}
 .chip.now{background:var(--ink);color:var(--bg)}
@@ -125,8 +125,8 @@ button{cursor:pointer}
 .check{flex:none;width:44px;height:44px;margin-right:4px;border-radius:50%;border:2px solid var(--ink-2);background:transparent;color:var(--on-accent);display:grid;place-items:center;padding:0}
 .check svg{opacity:0;transition:opacity .15s}
 .check:hover svg{opacity:.3;color:var(--ink)}
-.check[aria-pressed="true"]{background:var(--accent);border-color:var(--accent)}
-.check[aria-pressed="true"] svg{opacity:1;color:var(--on-accent)}
+.check[aria-pressed="true"]{background:var(--ok);border-color:var(--ok)}
+.check[aria-pressed="true"] svg{opacity:1;color:#fff}
 .today{display:flex;align-items:center;gap:10px;padding:8px 12px}
 .today::before,.today::after{content:"";flex:1;height:2px;border-radius:2px;background:var(--accent);opacity:.35}
 .today span{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--accent)}
@@ -181,7 +181,7 @@ body{padding-top:calc(8px + env(safe-area-inset-top,0px))}
 .meta-card .amt{font-size:18px}
 .meta-card .bar{margin-top:6px;height:8px}
 .meta-card .sub2{display:flex;justify-content:space-between;gap:12px;font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
-.meta-card.done .bar i{background:var(--accent)}
+.meta-card.done .bar i{background:var(--ok)}
 .hist{list-style:none;margin:0 0 14px;padding:0;border-top:1px solid var(--line)}
 .hist li{display:flex;justify-content:space-between;gap:12px;padding:10px 2px;border-bottom:1px solid var(--line);font-size:15px}
 .hist small{display:block;color:var(--ink-2);font-size:12px}
@@ -219,7 +219,7 @@ body{padding-bottom:calc(150px + env(safe-area-inset-bottom,0px))}
 .dcard .row3{display:flex;gap:14px;align-items:center}
 .dcard .cl{display:grid;grid-template-columns:1fr auto;gap:2px 8px;font-size:14px;margin-bottom:8px}
 .dcard .cl i{grid-column:1/3;display:block;height:6px;border-radius:6px;background:var(--track);overflow:hidden}
-.dcard .cl i u{display:block;height:100%;border-radius:6px;background:var(--accent)}
+.dcard .cl i u{display:block;height:100%;border-radius:6px;background:var(--ok)}
 .dcard .stack{display:flex;height:12px;border-radius:12px;overflow:hidden;background:var(--track);margin:8px 0 6px}
 .empty::before{content:"";display:block;width:150px;height:100px;margin:0 auto 6px;background:url(cuchito-dormido.png) center/contain no-repeat}
 .gi{width:44px;height:44px;border-radius:14px;background:var(--surface-2);display:grid;place-items:center;font-size:22px;flex:none}
@@ -245,12 +245,15 @@ details.more[open]>summary{margin-bottom:12px}
 .ktile .kt b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ktile .kt small{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ktile .kb{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--track)}
-.ktile .kb i{display:block;height:100%;background:var(--accent)}
+.ktile .kb i{display:block;height:100%;background:var(--ok)}
 .ktile[aria-pressed="true"]{border-color:var(--accent);background:var(--hero)}
 .linkb{border:0;background:none;color:var(--accent);font-weight:700;text-decoration:underline;padding:4px;min-height:32px}
 .hero .big{font-size:clamp(34px,10.5vw,44px)}
 .hero .of{margin-top:2px}
 .hero .bar{margin-top:10px}
+
+.fab{background:var(--accent);box-shadow:0 8px 22px rgba(194,71,106,.35);width:54px;height:54px}
+.fab svg{width:24px;height:24px}
 </style>
 </head>
 <body>
@@ -595,13 +598,13 @@ function renderGHero(G){
     '<p class="big">'+fmt(G.total)+'</p>'+
     '<p class="of">'+(G.n?G.n+(G.n===1?' gasto':' gastos'):'Sin gastos todavía')+(G.tarjeta>0?' · '+fmt(G.tarjeta)+' con tarjeta':'')+(G.cur&&G.today>0&&per==='mes'?' · hoy '+fmt(G.today):'')+'</p>'+
     (per==='sem'?semBlock(G,line):'<details style="margin-top:12px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center">Ver cuentas del mes</summary><div class="split" style="display:block">'+line('Ingresos',B.ing)+line('Pagos fijos de tu bolsa',B.fijos,true)+line('Gastos de tu bolsa',B.gastos,true)+(B.ahorro?line('Apartado para ahorro',B.ahorro,true):'')+
-    '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Diferencia del mes':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--ink)':'var(--accent)')+'">'+(B.res<0?'−':'')+fmt(Math.abs(B.res))+'</b></div></div></details>');
+    '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Diferencia del mes':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--ink)':'var(--ok)')+'">'+(B.res<0?'−':'')+fmt(Math.abs(B.res))+'</b></div></div></details>');
 }
 function semBlock(G,line){
   var cap=0;Object.keys(KATS).forEach(function(k){cap+=presupFor(k,'sem');});
   var rest=r2(cap-G.total),wr=weekRange();
   var cm=G.byCat.comida||0,cc=presupFor('comida','sem');
-  var bl=function(l,v){return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+l+'</b><b style="font-variant-numeric:tabular-nums;color:'+(rest<0?'var(--late)':'var(--accent)')+'">'+fmt(Math.abs(v))+'</b></div>';};
+  var bl=function(l,v){return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+l+'</b><b style="font-variant-numeric:tabular-nums;color:'+(rest<0?'var(--late)':'var(--ok)')+'">'+fmt(Math.abs(v))+'</b></div>';};
   if(!cap)return '<div class="split" style="display:block"><p class="of">Sin topes. Pon tu presupuesto mensual y la semana se calcula sola (mes × 12 ÷ 52).</p></div>';
   return '<div class="split" style="display:block">'+line('Tope de la semana',cap)+line('Gastado',G.total)+(cc?line('Comidas fuera (tope '+fmt(cc)+')',cm):'')+bl(rest<0?'Te pasaste':'Te quedan',rest)+'<p class="of" style="margin-top:6px">Lunes '+wr.a.slice(8)+' a domingo '+wr.b.slice(8)+'</p></div>';
 }
@@ -614,7 +617,7 @@ function presupHtml(G){
     var pct=lim>0?Math.min(100,Math.round(g/lim*100)):100,over=lim>0?r2(g-lim):0;
     var chip=lim<=0?'<span class="chip soon">Sin presupuesto</span>':over>0.005?'<span class="chip late">Te pasaste '+fmt(over)+'</span>':'<span class="chip ok">Quedan '+fmt(-over)+'</span>';
     return '<li style="padding:10px 14px"><div class="top2" style="display:flex;justify-content:space-between;gap:12px"><span class="name" style="font-size:15px">'+kl(k)+'</span><span style="font-variant-numeric:tabular-nums;font-size:14px"><b>'+fmt(g)+'</b>'+(lim>0?' de '+fmt(lim):'')+'</span></div>'+
-      '<div class="bar" style="height:8px;margin-top:8px"><i style="width:'+pct+'%;background:'+(lim<=0?'var(--track)':over>0.005?'#E8A33D':pct>=80?'#E8A33D':'var(--accent)')+'"></i></div><div style="margin-top:6px">'+chip+'</div></li>';
+      '<div class="bar" style="height:8px;margin-top:8px"><i style="width:'+pct+'%;background:'+(lim<=0?'var(--track)':over>0.005?'#E8A33D':pct>=80?'#E8A33D':'var(--ok)')+'"></i></div><div style="margin-top:6px">'+chip+'</div></li>';
   }).join('');
   return '<div style="display:flex;justify-content:space-between;align-items:baseline;margin:20px 8px 8px"><p class="eyebrow" style="margin:0">Presupuesto · '+fmt(r2(tg))+' de '+fmt(r2(tp))+'</p><button type="button" class="btn ghost" data-act="presup" style="min-height:36px;padding:0 12px;font-size:13px">Editar</button></div><ul class="list">'+rows+'</ul>';
 }
@@ -1227,7 +1230,7 @@ function ahorroSim(D,P,base){
     return {x:x,r:r,ahorro:r2(base.interes-r.interes),menos:base.meses-r.meses};
   });
   return '<p class="eyebrow" style="margin:20px 8px 8px">¿Y si abonás más al mes?</p><ul class="list">'+rows.map(function(o){
-    return '<li class="row" style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 16px"><span><b>+'+fmt(o.x)+' al mes</b><br><small class="note" style="margin:0">Libre en '+mesTxt(o.r.meses)+(o.menos>0?' · '+durTxt(o.menos)+' antes':'')+'</small></span><b style="color:var(--accent)">'+(o.ahorro>0?'ahorrás '+fmt(o.ahorro):'—')+'</b></li>';
+    return '<li class="row" style="display:flex;justify-content:space-between;gap:12px;align-items:center;padding:12px 16px"><span><b>+'+fmt(o.x)+' al mes</b><br><small class="note" style="margin:0">Libre en '+mesTxt(o.r.meses)+(o.menos>0?' · '+durTxt(o.menos)+' antes':'')+'</small></span><b style="color:var(--ok)">'+(o.ahorro>0?'ahorrás '+fmt(o.ahorro):'—')+'</b></li>';
   }).join('')+'</ul><p class="note" style="margin:6px 8px 0">Comparado con tu plan actual. Estimado: el banco puede sumar seguros.</p>';
 }
 
@@ -1452,7 +1455,7 @@ function dashHtml(M,I){
     var cmp='';
     if(M.cur){var pk=mkey(S.m?S.y:S.y-1,S.m?S.m-1:11),pv=0;S.gastos.forEach(function(g){if(g.date.slice(0,7)===pk&&+g.date.slice(8)<=today)pv+=g.amount;});
       if(pv>0){var dv=r2(G.total-pv);cmp='<p class="note" style="margin:10px 0 0;font-weight:600">'+(dv<=0?'👏 Vas '+fmt(-dv)+' por debajo de '+MONTHS[S.m?S.m-1:11]+' a esta fecha':'Vas '+fmt(dv)+' por encima de '+MONTHS[S.m?S.m-1:11]+' a esta fecha')+'</p>';}}
-    var pct=bud>0?Math.round(G.total/bud*100):0,col=pct>85?'#E8A33D':'var(--accent)';
+    var pct=bud>0?Math.round(G.total/bud*100):0,col=pct>85?'#E8A33D':'var(--ok)';
     var tops=G.cats.slice(0,3).map(function(o){var b=Number((S.presup||{})[o.k])||0,w=b>0?Math.min(100,Math.round(o.v/b*100)):100;
       return '<div class="cl"><span>'+kl(o.k)+'</span><b>'+fmt(o.v)+(b>0?' <span style="font-weight:400;color:var(--ink-2)">de '+fmt(b)+'</span>':'')+'</b><i><u style="width:'+w+'%;'+(b>0&&o.v>b?'background:#E8A33D':'')+'"></u></i></div>';}).join('');
     h+='<button type="button" class="dcard" data-act="view" data-v="gastos"><p class="ttl">Tus gastos de '+MONTHS[S.m]+'</p><div class="row3">'+(bud>0?ringSvg(pct,col,pct+'%','del plan'):'')+'<div style="flex:1;min-width:0"><p class="num" style="font-size:28px">'+fmt(G.total)+'</p><p class="note" style="margin:2px 0 0">'+(bud>0?'de '+fmt(r2(bud))+' presupuestados':'sin presupuesto aún')+'</p></div></div>'+cmp+(tops?'<div style="margin-top:14px">'+tops+'</div>':'')+'</button>';
