@@ -9,12 +9,12 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&family=Figtree:wght@400..700&display=swap">
 <style>
 [hidden]{display:none!important}
+@font-face{font-family:'Nunito';font-style:normal;font-weight:200 1000;font-display:swap;src:url(nunito.woff2) format('woff2')}
 :root{
-  --font-display:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;
-  --font-body:'Figtree',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-display:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --font-body:'Nunito',system-ui,-apple-system,'Segoe UI',sans-serif;
   --bg:#FFF8F4;
   --surface:#FFFFFF;
   --surface-2:#FBEBE6;
@@ -72,7 +72,7 @@ button{cursor:pointer}
 .mnav h2{margin:0;font-family:var(--font-display);font-weight:600;font-size:18px;text-transform:capitalize}
 .mnav button{width:40px;height:40px;border-radius:50%;border:0;background:var(--hero-btn);display:grid;place-items:center}
 .eyebrow{font-size:12px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);margin:16px 0 0}
-.big{font-family:var(--font-display);font-weight:700;font-size:clamp(40px,12vw,52px);line-height:1.02;letter-spacing:-.025em;margin:2px 0 0;font-variant-numeric:tabular-nums}
+.big{font-family:var(--font-display);font-weight:700;font-size:clamp(40px,12vw,52px);line-height:1.02;letter-spacing:-.01em;margin:2px 0 0;font-variant-numeric:tabular-nums}
 .of{color:var(--ink-2);margin:4px 0 0;font-size:15px}
 .bar{height:10px;border-radius:999px;background:var(--track);margin-top:16px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--accent);border-radius:999px;transition:width .4s ease}
