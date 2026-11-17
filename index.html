@@ -238,6 +238,16 @@ details.more[open]>summary{margin-bottom:12px}
 #fab-txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .nav button[aria-current="page"]{color:var(--ink)}
 .nav button[aria-current="page"] svg{background:var(--hero)}
+.ktiles{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 0 14px}
+.ktile{position:relative;display:grid;grid-template-columns:auto 1fr;gap:10px;align-items:center;text-align:left;padding:12px;border-radius:18px;border:1.5px solid transparent;background:var(--surface);box-shadow:var(--shadow);overflow:hidden}
+.ktile .gi{width:40px;height:40px;font-size:20px}
+.ktile .kt{display:grid;gap:1px;min-width:0}
+.ktile .kt b{font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ktile .kt small{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ktile .kb{position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--track)}
+.ktile .kb i{display:block;height:100%;background:var(--accent)}
+.ktile[aria-pressed="true"]{border-color:var(--accent);background:var(--hero)}
+.linkb{border:0;background:none;color:var(--accent);font-weight:700;text-decoration:underline;padding:4px;min-height:32px}
 </style>
 </head>
 <body>
@@ -272,6 +282,8 @@ details.more[open]>summary{margin-bottom:12px}
 'use strict';
 var MONTHS=['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 var MON=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+var KINDP={tarjeta:'Tarjetas',prestamo:'Préstamos',suscripcion:'Suscripciones',servicio:'Servicios',seguro:'Seguros',familia:'Apoyo',cuchubal:'Cuchubal',otro:'Otros'};
+var KINDEM={tarjeta:'💳',prestamo:'🏦',suscripcion:'📺',servicio:'💡',seguro:'🛡️',familia:'🤝',cuchubal:'🐷',otro:'✨'};
 var KINDS={tarjeta:'Tarjeta',prestamo:'Préstamo',suscripcion:'Suscripción',servicio:'Servicio',seguro:'Seguro',familia:'Apoyo personal',cuchubal:'Cuchubal',otro:'Otro'};
 var KATS={super:'Supermercado',comida:'Restaurantes',cafe:'Café y antojos',gasolina:'Gasolina',transporte:'Uber y parqueo',carro:'Carro',salud:'Farmacia y médico',vet:'Mascotas',personal:'Cuidado personal',ropa:'Ropa y zapatos',hogar:'Casa y hogar',ocio:'Salidas y ocio',regalos:'Regalos',viajes:'Viajes',educacion:'Educación',compras:'Otras compras',otro:'Otro / sin clasificar'};
 var KEM={super:'🛒',comida:'🍔',cafe:'☕',gasolina:'⛽',transporte:'🚕',carro:'🚗',salud:'💊',vet:'🐶',personal:'💅',ropa:'👗',hogar:'🏠',ocio:'🎉',regalos:'🎁',viajes:'✈️',educacion:'📚',compras:'🛍️',otro:'✨'};
@@ -293,7 +305,7 @@ var r2=function(n){return Math.round(n*100)/100;};
 var dim=function(y,m){return new Date(y,m+1,0).getDate();};
 var mkey=function(y,m){return y+'-'+pad(m+1);};
 var nowD=new Date();
-var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos:[],extras:[],cobros:[],transf:[],presup:{},reglas:{},per:'mes',plan:{extra:0,metodo:'tasa',unico:0,unicoMes:''},view:'inicio',filter:'todos',y:nowD.getFullYear(),m:nowD.getMonth(),sheet:null,armed:false,opener:null,pin:null,key:null,locked:false,hiddenAt:0};
+var S={pagos:[],meses:{},gastos:[],metas:[],movs:[],cuentas:[],snaps:[],ingresos:[],extras:[],cobros:[],transf:[],presup:{},reglas:{},per:'mes',plan:{extra:0,metodo:'tasa',unico:0,unicoMes:''},view:'inicio',filter:'todos',y:nowD.getFullYear(),m:nowD.getMonth(),sheet:null,armed:false,opener:null,pin:null,key:null,locked:false,hiddenAt:0,kfilter:''};
 
 /* ---------- almacenamiento local (solo en este teléfono) ----------
    Sin PIN: se guarda tal cual. Con PIN: se guarda cifrado (AES-GCM, clave derivada del PIN con PBKDF2). */
@@ -499,7 +511,11 @@ function renderMain(M){
     return;
   }
   var f=S.filter;
-  var shown=M.all.filter(function(it){return f==='todos'||(f==='pendientes'&&!it.paid)||(f==='pagados'&&it.paid);});
+  var shown=M.all.filter(function(it){return (!S.kfilter||it.p.kind===S.kfilter)&&(f==='todos'||(f==='pendientes'&&!it.paid)||(f==='pagados'&&it.paid));});
+  var KT={};M.all.forEach(function(it){var k=it.p.kind,o=KT[k]||(KT[k]={tot:0,pen:0,n:0});o.tot+=it.amt;o.n++;if(!it.paid)o.pen+=it.amt;});
+  var tiles='<div class="ktiles">'+Object.keys(KT).sort(function(a,b){return KT[b].pen-KT[a].pen||KT[b].tot-KT[a].tot;}).map(function(k){
+    var o=KT[k],pct=o.tot>0?Math.round((o.tot-o.pen)/o.tot*100):100,act=S.kfilter===k;
+    return '<button type="button" class="ktile" data-act="kfilter" data-v="'+k+'" aria-pressed="'+act+'"><span class="gi" aria-hidden="true">'+(KINDEM[k]||'✨')+'</span><span class="kt"><b>'+KINDP[k]+'</b><small>'+(o.pen>0.005?'Falta '+fmt(r2(o.pen)):'✓ Al día')+' · '+o.n+'</small></span><span class="kb"><i style="width:'+pct+'%"></i></span></button>';}).join('')+'</div>';
   var pend=M.n-M.paidN;
   var seg='<div class="seg" role="group" aria-label="Filtrar pagos">'+
     '<button type="button" data-act="filter" data-v="todos" aria-pressed="'+(f==='todos')+'">Todos '+M.n+'</button>'+
@@ -524,7 +540,8 @@ function renderMain(M){
       return '<li><button type="button" data-act="open" data-id="'+esc(p.id)+'"><span>'+esc(p.name)+'</span><small>'+p.day+' de '+MONTHS[p.mes]+' · '+fmt(p.amount)+'</small></button></li>';
     }).join('')+'</ul></section>';
   }
-  el.innerHTML=seg+body+ann;
+  var fl=S.kfilter?'<p class="note" style="margin:0 8px 8px">Mostrando solo '+esc(KINDP[S.kfilter])+'. <button type="button" class="linkb" data-act="kfilter" data-v="'+S.kfilter+'">Ver todo</button></p>':'';
+  el.innerHTML=tiles+seg+fl+body+ann;
 }
 
 /* ---------- gastos variables ---------- */
@@ -1920,6 +1937,7 @@ document.addEventListener('click',function(e){
   if(a==='prev'){S.m--;if(S.m<0){S.m=11;S.y--;}render();}
   else if(a==='next'){S.m++;if(S.m>11){S.m=0;S.y++;}render();}
   else if(a==='filter'){S.filter=el.dataset.v;render();}
+  else if(a==='kfilter'){S.kfilter=S.kfilter===el.dataset.v?'':el.dataset.v;render();}
   else if(a==='toggle')togglePaid(el.dataset.id);
   else if(a==='open')openSheet(el.dataset.id);
   else if(a==='gopen')openSheet(el.dataset.id,'gd');
