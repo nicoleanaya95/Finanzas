@@ -1812,7 +1812,7 @@ function themeApply(){var t=themeGet(),r=document.documentElement;if(t==='auto')
 themeApply();
 function optsHtml(){
   var th=themeGet();
-  return '<h2 id="sheet-title">Opciones</h2>'+
+  return '<h2 id="sheet-title">Opciones</h2><p class="note" style="margin:-6px 0 8px;font-size:12px">Versión 17 nov · 4:35 pm'+(window.SEED?' · datos v'+window.SEED.v:'')+'</p>'+
     '<p class="sub">Todo se guarda solo en este teléfono, no en internet'+(S.pin?', cifrado con tu PIN':'')+'. Haz un respaldo de vez en cuando y guárdalo en tu Drive o correo: si borras la app, cambias de teléfono o limpias los datos del navegador, lo restauras de ahí. Ojo: el archivo de respaldo no va cifrado, no lo compartas.</p>'+
     '<p><b>Alertas de pago.</b> Abre un pago y toca «Crear alerta en Calendario». Se crea un evento que se repite cada mes a las 8:00 a. m. En Google Calendar agrega notificaciones (por ejemplo 3 días y 1 día antes).</p>'+
     '<p class="lbl" style="margin:12px 0 6px">Apariencia</p><div class="seg" role="group" aria-label="Apariencia" style="margin-bottom:12px">'+[['auto','Automático'],['light','Claro'],['dark','Oscuro']].map(function(x){return '<button type="button" data-act="theme" data-v="'+x[0]+'" aria-pressed="'+(th===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
