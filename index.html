@@ -1513,7 +1513,7 @@ function renderIMain(M,I){
   var C=cmodel(),h='';
   var A0=availCalc(M),nh=M.cur&&A0.hasD;
   if(!nh)h+=amigoHtml();
-  h+=(dueBanner(M)||backupBanner());
+  h+=pendBanner()+(dueBanner(M)||backupBanner());
   // acciones rápidas
   h+='<div class="quick" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:16px"><button type="button" class="btn ghost" data-act="qadd">+ Gasto</button><button type="button" class="btn ghost" data-act="scan">Escanear</button><button type="button" class="btn ghost" data-act="cash">Efectivo</button></div>';
   h+=dashHtml(M,I);
@@ -1666,7 +1666,7 @@ function monthDoc(key){
   var c=S.meses[key]||{};
   return {paid:Object.assign({},c.paid),amounts:Object.assign({},c.amounts),ing:Object.assign({},c.ing),amort:Object.assign({},c.amort),deduct:Object.assign({},c.deduct)};
 }
-function togglePaid(id){
+function togglePaid(id,srcId){
   var key=mkey(S.y,S.m),doc=monthDoc(key);
   doc.paid[id]=!doc.paid[id];
   var p=S.pagos.find(function(x){return x.id===id;});
@@ -1685,7 +1685,8 @@ function togglePaid(id){
     if(cc){cc.saldo=r2(Math.abs(cc.saldo)+a.capital);S.snaps.push(normSn(newId('s'),{cuenta:cc.id,saldo:cc.saldo,date:todayStr(),t:Date.now()}));msg=cc.name+': se devolvieron '+fmt(a.capital)+' al saldo';}
     delete doc.amort[id];
   }
-  var src=p&&p.desde?S.cuentas.find(function(x){return x.id===p.desde;}):null;
+  var src=srcId&&srcId!=='?'?S.cuentas.find(function(x){return x.id===srcId;}):null;
+  if(doc.paid[id]&&srcId==='?'&&!doc.deduct[id]){doc.deduct[id]={cuenta:'',amount:doc.amounts[id]!=null?Number(doc.amounts[id]):p.amount,pending:true};msg=(msg?msg+' · ':'')+'Pendiente de elegir la cuenta (te lo recuerdo en Inicio)';}
   if(doc.paid[id]&&src&&!doc.deduct[id]){
     var amt2=doc.amounts[id]!=null?Number(doc.amounts[id]):p.amount;
     src.saldo=r2(src.saldo-amt2);src.upd=todayStr();
@@ -1696,8 +1697,6 @@ function togglePaid(id){
     var d2=doc.deduct[id],c2=S.cuentas.find(function(x){return x.id===d2.cuenta;});
     if(c2){c2.saldo=r2(c2.saldo+d2.amount);S.snaps.push(normSn(newId('s'),{cuenta:c2.id,saldo:c2.saldo,date:todayStr(),t:Date.now()}));msg=c2.name+': se devolvieron '+fmt(d2.amount);}
     delete doc.deduct[id];
-  }else if(doc.paid[id]&&p&&!p.desde&&!p.planilla&&!c){
-    msg='Pagado. Para que descuente de tu cuenta, abrí el pago y elegí «Se paga desde».';
   }
   S.meses[key]=doc;persist();render();
   if(msg)toast(msg);
@@ -1724,6 +1723,29 @@ function calUrl(p){
 }
 
 /* ---------- hoja de edición ---------- */
+function fixPending(id,accId){
+  var key=mkey(S.y,S.m),doc=monthDoc(key),d=doc.deduct[id];
+  if(!d||!d.pending)return;
+  var c=accId?S.cuentas.find(function(x){return x.id===accId;}):null;
+  if(c){c.saldo=r2(c.saldo-d.amount);c.upd=todayStr();S.snaps.push(normSn(newId('s'),{cuenta:c.id,saldo:c.saldo,date:todayStr(),t:Date.now()}));doc.deduct[id]={cuenta:c.id,amount:d.amount};toast(c.name+': −'+fmt(d.amount));}
+  else delete doc.deduct[id];
+  S.meses[key]=doc;persist();render();
+}
+function pendBanner(){
+  var d=(S.meses[mkey(S.y,S.m)]||{}).deduct||{};
+  var ids=Object.keys(d).filter(function(i){return d[i]&&d[i].pending&&S.pagos.some(function(p){return p.id===i;});});
+  if(!ids.length)return '';
+  return ids.map(function(i){var p=S.pagos.find(function(x){return x.id===i;});return '<button type="button" class="dcard" data-act="payfix" data-id="'+esc(i)+'" style="display:flex;align-items:center;gap:12px;margin-top:14px"><span style="font-size:24px" aria-hidden="true">❓</span><span><b>¿De qué cuenta salió «'+esc(p.name)+'»?</b><br><span class="note" style="margin:0">'+fmt(d[i].amount)+' · tocá para elegir y restarlo</span></span></button>';}).join('');
+}
+function paySrcHtml(){
+  var p=S.pagos.find(function(x){return x.id===S.payId;})||{};
+  var last='';try{last=localStorage.getItem('finanzas-ultima-fuente')||'';}catch(x){}
+  var def=p.desde||last;
+  var accs=S.cuentas.filter(function(c){return !isDebt(c.type);});
+  return '<h2 id="sheet-title">¿Desde qué cuenta lo pagaste?</h2><p class="sub">'+esc(p.name||'')+' · '+fmt(p.amount||0)+'. Se resta de esa cuenta.</p>'+
+    '<div style="display:grid;gap:8px;margin:12px 0">'+accs.map(function(c){return '<button type="button" class="btn '+(c.id===def?'primary':'ghost')+'" data-act="paysrc" data-v="'+esc(c.id)+'" style="justify-content:space-between;display:flex"><span>'+esc(c.name)+'</span><span>'+fmt(c.saldo)+'</span></button>';}).join('')+
+    (S.payFix?'':'<button type="button" class="btn ghost" data-act="paysrc" data-v="?">Decidir después</button>')+'<button type="button" class="btn ghost" data-act="paysrc" data-v="">No descontar de ninguna</button></div>';
+}
 function openSheet(id,kind){
   S.opener=document.activeElement;S.sheet={id:id,kind:kind||''};S.armed=false;
   var body=$('sheet-body');
@@ -1733,6 +1755,7 @@ function openSheet(id,kind){
   else if(id==='transf')body.innerHTML=transfForm(kind==='cash');
   else if(id==='presup')body.innerHTML=presupForm();
   else if(id==='quick'){body.innerHTML=quickHtml();setTimeout(function(){var q=$('q-amt');if(q)q.focus();},50);}
+  else if(id==='paysrc')body.innerHTML=paySrcHtml();
   else if(id==='reglas')body.innerHTML=reglasHtml();
   else if(id==='resumen')body.innerHTML=resumenHtml();
   else if(id==='pinset')body.innerHTML=pinSetHtml();
@@ -1796,7 +1819,6 @@ function formHtml(p){
       '<div class="field"><label for="f-via">Cómo se cobra</label><select id="f-via">'+via+'</select></div>'+
       '<div class="field"><label for="f-note">Nota (opcional)</label><input type="text" id="f-note" maxlength="80" autocomplete="off" placeholder="Ej. plan, número o cuenta" value="'+esc(v.note)+'"></div>'+
       (S.cuentas.some(function(c){return isDebt(c.type);})?'<div class="field"><label for="f-cta">Abona a (préstamo o tarjeta)</label><select id="f-cta"><option value="">Ninguno</option>'+S.cuentas.filter(function(c){return isDebt(c.type);}).map(function(c){return '<option value="'+esc(c.id)+'"'+(v.cuenta===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div><p class="hint">Al marcarlo pagado se descuenta del saldo. Si la deuda tiene tasa, solo se descuenta lo que va a capital.</p>':'')+
-      '<div class="field"><label for="f-desde">Se paga desde (descuenta al marcar pagado)</label><select id="f-desde"><option value="">No descontar</option>'+S.cuentas.filter(function(c){return !isDebt(c.type);}).map(function(c){return '<option value="'+esc(c.id)+'"'+(v.desde===c.id?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div>'+
       '<label class="tick"><input type="checkbox" id="f-plan"'+(v.planilla?' checked':'')+'> Me lo descuentan de planilla</label>'+
       '<label class="tick"><input type="checkbox" id="f-rev"'+(v.review?' checked':'')+'> Monto por revisar</label>'+
       '<p class="err" id="f-err" role="alert" hidden></p>'+
@@ -1832,7 +1854,7 @@ function submitForm(e){
   var rep=$('f-rep').value;
   var id=S.sheet.id==='new'?newId('p'):S.sheet.id;
   var old=S.pagos.find(function(x){return x.id===id;});
-  var doc={name:name,day:day,amount:r2(amt),kind:$('f-kind').value,review:$('f-rev').checked,via:$('f-via').value,note:$('f-note').value.trim(),o:old?old.o:Date.now(),cuenta:$('f-cta')?$('f-cta').value:(old?old.cuenta:''),desde:$('f-desde')?$('f-desde').value:'',planilla:$('f-plan').checked,hasta:/^\d{4}-\d{2}$/.test($('f-hasta').value)?$('f-hasta').value:''};
+  var doc={name:name,day:day,amount:r2(amt),kind:$('f-kind').value,review:$('f-rev').checked,via:$('f-via').value,note:$('f-note').value.trim(),o:old?old.o:Date.now(),cuenta:$('f-cta')?$('f-cta').value:(old?old.cuenta:''),desde:(old?old.desde:''),planilla:$('f-plan').checked,hasta:/^\d{4}-\d{2}$/.test($('f-hasta').value)?$('f-hasta').value:''};
   if(rep!=='')doc.mes=parseInt(rep,10);
   S.pagos=S.pagos.filter(function(x){return x.id!==id;}).concat([norm(id,doc)]);
   if(mamtEl){
@@ -2025,7 +2047,15 @@ document.addEventListener('click',function(e){
   else if(a==='ajtoggle'){var ax=(S.ajeno||[]).find(function(x){return x.id===el.dataset.id;});if(ax){ax.done=!ax.done;persist();render();toast(ax.done?'Marcado como entregado':'Vuelve a pendiente');}}
   else if(a==='theme'){try{localStorage.setItem('finanzas-tema',el.dataset.v);}catch(e){}themeApply();$('sheet-body').innerHTML=optsHtml();}
   else if(a==='kfilter'){S.kfilter=S.kfilter===el.dataset.v?'':el.dataset.v;render();}
-  else if(a==='toggle')togglePaid(el.dataset.id);
+  else if(a==='toggle'){
+    var tp=S.pagos.find(function(x){return x.id===el.dataset.id;}),tdoc=monthDoc(mkey(S.y,S.m));
+    if(tp&&!tdoc.paid[tp.id]&&!tp.planilla&&S.cuentas.some(function(c){return !isDebt(c.type);})){S.payId=tp.id;S.payFix=false;openSheet('paysrc');}
+    else togglePaid(el.dataset.id);
+  }
+  else if(a==='paysrc'){var pid=S.payId,fix=S.payFix;closeSheet();var pp=S.pagos.find(function(x){return x.id===pid;});
+    if(fix)fixPending(pid,el.dataset.v||'');
+    else{if(pp&&el.dataset.v!=='?')pp.desde=el.dataset.v||'';togglePaid(pid,el.dataset.v||'');}}
+  else if(a==='payfix'){S.payId=el.dataset.id;S.payFix=true;openSheet('paysrc');}
   else if(a==='open')openSheet(el.dataset.id);
   else if(a==='gopen')openSheet(el.dataset.id,'gd');
   else if(a==='gedit'){var gid=el.dataset.id;closeSheet();openSheet(gid,'g');}
