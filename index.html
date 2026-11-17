@@ -1071,7 +1071,7 @@ function renderCHero(C,full){
   if(!full){
     $('hero').innerHTML='<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow" style="margin-top:4px">Lo que tengo</p>'+
       '<p class="big">'+fmt(C.activos)+'</p>'+
-      '<p class="of">En bancos, efectivo y ahorros</p></div><img src="cuchito-cuentas.png" width="92" height="80" alt="" style="flex:none;object-fit:contain"></div>'+
+      '<p class="of">'+(function(){var o=r2(S.cuentas.reduce(function(m,c){return !isDebt(c.type)?m+(c.apart||0):m;},0)+heldSum());return o>0?'Incluye '+fmt(o)+' de otras personas · <b>tuyo '+fmt(r2(C.activos-o))+'</b>':'En bancos, efectivo y ahorros';})()+'</p></div><img src="cuchito-cuentas.png" width="92" height="80" alt="" style="flex:none;object-fit:contain"></div>'+
       (Object.keys(C.byType).length?'<div class="cats">'+Object.keys(CTYPES).filter(function(k){return C.byType[k]!=null&&!isDebt(k);}).map(function(k){return '<span>'+CTYPES[k]+' '+fmt(r2(C.byType[k]))+'</span>';}).join('')+'</div>':'');
     return;
   }
