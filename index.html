@@ -915,7 +915,7 @@ function renderAMain(A){
     var by=m.by?(function(){var p=m.by.split('-');return MON[+p[1]-1]+' '+p[0];})():'';
     var cta=S.cuentas.find(function(c){return c.id===m.cuenta;});
     return '<button type="button" class="meta-card'+(m.goal>0&&x.falta<=0?' done':'')+'" data-act="aopen" data-id="'+esc(m.id)+'">'+
-      '<span class="top2"><span class="name">'+esc(m.name)+(cta?' <span class="chip">'+esc(cta.name)+'</span>':'')+'</span><span class="amt">'+fmt(x.s)+'</span></span>'+
+      '<span class="top2"><span class="name">'+(/viaje|concierto|vacaci|guate|paseo/i.test(m.name)?'<img src="cuchito-viaje.png" width="40" height="34" alt="" style="vertical-align:middle;margin:-6px 6px -4px 0">':'')+esc(m.name)+(cta?' <span class="chip">'+esc(cta.name)+'</span>':'')+'</span><span class="amt">'+fmt(x.s)+'</span></span>'+
       (m.goal>0?'<span class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+x.pct+'" aria-label="Avance de '+esc(m.name)+'"><i style="width:'+x.pct+'%"></i></span>':'')+
       '<span class="sub2">'+sub+'<span>'+(m.goal>0?x.pct+'% de '+fmt(m.goal):'')+(by?' · '+by:'')+'</span></span>'+
     '</button>';
