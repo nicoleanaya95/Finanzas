@@ -594,9 +594,9 @@ function renderGHero(G){
   var line=function(l,v,neg){return '<div style="display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:2px 0"><span style="color:var(--ink-2)">'+l+'</span><b style="font-variant-numeric:tabular-nums">'+(neg?'−':'')+fmt(v)+'</b></div>';};
   var lbl=per==='sem'?'esta semana':per==='mes'?MONTHS[S.m]:per==='q1'?'la 1.ª quincena':'la 2.ª quincena';
   $('hero').innerHTML=navHtml()+seg+
-    '<p class="eyebrow">Gastado en '+lbl+'</p>'+
+    '<div style="display:flex;align-items:center;gap:8px"><div style="flex:1;min-width:0"><p class="eyebrow">Gastado en '+lbl+'</p>'+
     '<p class="big">'+fmt(G.total)+'</p>'+
-    '<p class="of">'+(G.n?G.n+(G.n===1?' gasto':' gastos'):'Sin gastos todavía')+(G.tarjeta>0?' · '+fmt(G.tarjeta)+' con tarjeta':'')+(G.cur&&G.today>0&&per==='mes'?' · hoy '+fmt(G.today):'')+'</p>'+
+    '<p class="of">'+(G.n?G.n+(G.n===1?' gasto':' gastos'):'Sin gastos todavía')+(G.tarjeta>0?' · '+fmt(G.tarjeta)+' con tarjeta':'')+(G.cur&&G.today>0&&per==='mes'?' · hoy '+fmt(G.today):'')+'</p></div><img src="cuchito-gastos.png" width="92" height="84" alt="" style="flex:none;object-fit:contain"></div>'+
     (per==='sem'?semBlock(G,line):'<details style="margin-top:12px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center">Ver cuentas del mes</summary><div class="split" style="display:block">'+line('Ingresos',B.ing)+line('Pagos fijos de tu bolsa',B.fijos,true)+line('Gastos de tu bolsa',B.gastos,true)+(B.ahorro?line('Apartado para ahorro',B.ahorro,true):'')+
     '<div style="display:flex;justify-content:space-between;gap:12px;font-size:16px;padding:8px 0 0;margin-top:6px;border-top:1px solid var(--hero-line)"><b>'+(B.res<0?'Diferencia del mes':'Sobró')+'</b><b style="font-variant-numeric:tabular-nums;color:'+(B.res<0?'var(--ink)':'var(--ok)')+'">'+(B.res<0?'−':'')+fmt(Math.abs(B.res))+'</b></div></div></details>');
 }
