@@ -282,6 +282,28 @@ details.more[open]>summary{margin-bottom:12px}
 .metas{display:grid;gap:14px}
 .qcat[aria-pressed="true"]{background:var(--hero);border-color:var(--accent);box-shadow:0 0 0 2px var(--accent) inset}
 #qform .actions{position:sticky;bottom:calc(-24px - env(safe-area-inset-bottom,0px));background:var(--surface);padding:12px 0 calc(36px + env(safe-area-inset-bottom,0px));margin-top:12px;z-index:2;box-shadow:0 -8px 12px -8px rgba(120,60,70,.15)}
+
+.aj-card{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:16px;margin:0 0 10px;box-shadow:inset 0 1px 0 rgba(255,255,255,.8),0 8px 20px rgba(194,71,106,.10);display:grid;gap:10px}
+.aj-head{display:flex;align-items:center;gap:12px}
+.aj-av{width:48px;height:48px;border-radius:50%;background:var(--hero);display:grid;place-items:center;font-weight:800;font-size:20px;flex:none}
+.aj-t{flex:1;min-width:0;display:grid;gap:2px}
+.aj-t .name{font-size:17px;font-weight:700}
+.aj-sub{font-size:13px;color:var(--ink-2)}
+.aj-amt{text-align:right;display:grid;gap:1px;flex:none}
+.aj-amt b{font-size:24px;font-variant-numeric:tabular-nums}
+.aj-amt small{font-size:12px;color:var(--ink-2)}
+.aj-bar{height:8px;border-radius:99px;background:var(--hero);overflow:hidden}
+.aj-bar span{display:block;height:100%;background:var(--accent,#C2476A);border-radius:99px}
+.aj-chips{display:flex;flex-wrap:wrap;gap:6px}
+.aj-chips .chip{font-size:12px}
+.aj-note{margin:0;font-size:14px;color:var(--ink-2);line-height:1.35}
+.aj-uses{list-style:none;margin:0;padding:8px 0 0;border-top:1px solid var(--line);display:grid;gap:6px}
+.aj-uses li{display:flex;justify-content:space-between;gap:10px;font-size:14px}
+.aj-uses small{color:var(--ink-2)}
+.aj-uses b{font-variant-numeric:tabular-nums}
+.aj-btn{min-height:44px;width:100%}
+.aj-card.is-done{opacity:.7}
+.aj-uses b{white-space:nowrap}.aj-uses li span{min-width:0}
 </style>
 </head>
 <body>
@@ -1407,10 +1429,19 @@ function heldSum(){return r2((S.ajeno||[]).reduce(function(s,a){return a.done?s:
 function ajenoHtml(){
   var A=S.ajeno||[];if(!A.length)return '';
   var pen=A.filter(function(a){return !a.done;}),don=A.filter(function(a){return a.done;});
-  var row=function(a){return '<li class="row'+(a.done?' is-paid':'')+'"><div class="row-main" style="cursor:default"><span class="gi" aria-hidden="true">🤝</span><span class="info"><span class="name">'+esc(a.who)+'</span><span class="meta1">'+(a.note?esc(a.note)+' · ':'')+'desde '+esc(a.date.slice(8)+'/'+a.date.slice(5,7))+'</span></span><span class="amt">'+fmt(a.amount)+'</span></div><button type="button" class="check" data-act="ajtoggle" data-id="'+esc(a.id)+'" aria-pressed="'+a.done+'" aria-label="'+(a.done?'Volver a marcar como pendiente: ':'Marcar como entregado: ')+esc(a.who)+'">'+ICON.check+'</button></li>';};
+  var card=function(a){
+    var gs=(S.gastos||[]).filter(function(g){return g.aj&&g.aj.id===a.id;}).sort(function(x,y){return y.t-x.t;});
+    var used=r2(gs.reduce(function(s,g){return s+g.aj.amount;},0)),total=r2(a.amount+used),pct=total>0?Math.min(100,Math.round(used/total*100)):0;
+    var ini=esc((a.who||'?').trim().charAt(0).toUpperCase());
+    return '<div class="aj-card'+(a.done?' is-done':'')+'"><div class="aj-head"><span class="aj-av" aria-hidden="true">'+ini+'</span><div class="aj-t"><span class="name">'+esc(a.who)+'</span><span class="aj-sub">Dinero que le guardás</span></div><div class="aj-amt"><small>'+(a.done?'Entregado':'Te quedan')+'</small><b>'+fmt(a.amount)+'</b></div></div>'+
+      (used>0?'<div class="aj-bar" role="img" aria-label="Usado '+fmt(used)+' de '+fmt(total)+'"><span style="width:'+pct+'%"></span></div><div class="aj-chips"><span class="chip">Recibido '+fmt(total)+'</span><span class="chip">Usado '+fmt(used)+'</span></div>':'<div class="aj-chips"><span class="chip">Recibido '+fmt(total)+'</span></div>')+
+      (a.note?'<p class="aj-note">'+esc(a.note)+'</p>':'')+
+      (gs.length?'<ul class="aj-uses">'+gs.slice(0,4).map(function(g){return '<li><span>'+esc(g.note||'Gasto')+'<small> · '+esc(g.date.slice(8)+'/'+g.date.slice(5,7))+'</small></span><b>−'+fmt(g.aj.amount)+'</b></li>';}).join('')+'</ul>':'')+
+      '<button type="button" class="btn ghost aj-btn" data-act="ajtoggle" data-id="'+esc(a.id)+'">'+(a.done?'Volver a pendiente':'Ya se lo entregué')+'</button></div>';
+  };
   return '<div style="display:flex;align-items:center;justify-content:space-between;margin:20px 8px 8px"><p class="eyebrow" style="margin:0">Dinero de otras personas · '+fmt(heldSum())+'</p><img src="cuchito-ajeno.png" width="52" height="45" alt="" style="flex:none;object-fit:contain"></div>'+
-    (pen.length?'<ul class="list">'+pen.map(row).join('')+'</ul><p class="note" style="margin:6px 8px 0">No cuenta como tuyo: ya está restado de tu Disponible. Tocá el círculo cuando lo entregues o lo pagués.</p>':'<p class="note" style="margin:0 8px">Nada pendiente de entregar.</p>')+
-    (don.length?'<details style="margin-top:8px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center;padding:0 8px">Ya entregado ('+don.length+')</summary><ul class="list">'+don.map(row).join('')+'</ul></details>':'');
+    (pen.length?pen.map(card).join('')+'<p class="note" style="margin:6px 8px 0">No cuenta como tuyo: ya está restado de tu Disponible. Al anotar un gasto elegí "dinero de otra persona" para que baje de aquí.</p>':'<p class="note" style="margin:0 8px">Nada pendiente de entregar.</p>')+
+    (don.length?'<details style="margin-top:8px"><summary style="font-size:14px;color:var(--ink-2);cursor:pointer;min-height:36px;display:flex;align-items:center;padding:0 8px">Ya entregado ('+don.length+')</summary>'+don.map(card).join('')+'</details>':'');
 }
 function normX(id,d){
   d=d||{};
